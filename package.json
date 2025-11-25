@@ -1,0 +1,19 @@
+{
+  "name": "collab-mock-server",
+  "version": "1.0.0",
+  "description": "Mock server for Collab app development",
+  "main": "mock_server.js",
+  "scripts": {
+    "start": "node mock_server.js",
+    "dev": "nodemon mock_server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.7.1",
+    "nodemon": "^3.0.1"
+  }
+}

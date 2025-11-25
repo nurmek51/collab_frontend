@@ -1,0 +1,150 @@
+// Flutter App Expert .cursorrules
+
+// Flexibility Notice
+// Note: This is a recommended project structure, but be flexible and adapt to existing project structures.
+// Do not enforce these structural patterns if the project follows a different organization.
+// Focus on maintaining consistency with the existing project architecture while applying Flutter best practices.
+
+// Flutter Best Practices
+const flutterBestPractices = [
+    "Adapt to existing project architecture while maintaining clean code principles",
+    "Use Flutter 3.x features and Material 3 design",
+    "Implement clean architecture with BLoC pattern",
+    "UX/UI MUST BE ADAPTIVE FOR EACH DEVICES AND SCREEN SIZES",
+    "Less comments, only if needed",
+    "Follow proper state management principles",
+    "Use proper dependency injection with GetIt service locator",
+    "Implement proper error handling",
+    "Follow platform-specific design guidelines",
+    "Use proper localization techniques",
+    "Register all services in shared/di/service_locator.dart",
+    "Use shared service locator for backwards compatibility (legacy_di)",
+];
+
+// Project Structure
+// Note: This is a reference structure. Adapt to the project's existing organization
+const projectStructure = `
+lib/
+  core/
+    constants/
+    theme/
+    utils/
+    widgets/
+    services/
+    di/
+  features/
+    feature_name/
+      data/
+        datasources/
+        models/
+        repositories/
+      domain/
+        entities/
+        repositories/
+        usecases/
+      presentation/
+        bloc/
+        pages/
+        widgets/
+  shared/
+    di/          # Main service locator (legacy_di)
+    api/
+    guards/
+    storage/
+    state/
+    widgets/
+  l10n/
+  main.dart
+test/
+  unit/
+  widget/
+  integration/
+`;
+
+// Dependency Injection Guidelines
+const dependencyInjectionGuidelines = `
+1. Register all services in shared/di/service_locator.dart
+2. Use GetIt service locator pattern: final GetIt sl = GetIt.instance
+3. Register services as lazy singletons: sl.registerLazySingleton<Service>(() => Service())
+4. Access services using: sl<ServiceType>()
+5. Initialize dependencies in main.dart using legacy_di.initializeDependencies()
+6. Register these essential services:
+   - PreferencesService (for SharedPreferences)
+   - SecureStorageService (for secure storage)  
+   - ApiService (for API calls)
+   - AuthStore (for authentication state)
+   - Repositories and use cases following clean architecture
+7. Never access GetIt directly in widgets - use dependency injection through constructors
+`;
+
+// Coding Guidelines
+const codingGuidelines = `
+1. Use proper null safety practices
+2. Implement proper error handling with Either type or try-catch
+3. Follow proper naming conventions (camelCase for variables, PascalCase for classes)
+4. Use proper widget composition and const constructors
+5. Implement proper routing using GoRouter
+6. Use proper form validation
+7. Follow proper state management with BLoC or similar patterns
+8. Implement proper dependency injection using GetIt service locator
+9. Use proper asset management
+10. Follow proper testing practices
+11. UX/UI MUST BE ADAPTIVE FOR EACH DEVICES AND SCREEN SIZES
+12. Align use cases with repository interfaces (avoid method mismatches)
+13. Use consistent entity types across domain layer
+`;
+
+// Widget Guidelines
+const widgetGuidelines = `
+1. Keep widgets small and focused
+2. Use const constructors when possible
+3. Implement proper widget keys when needed
+4. Follow proper layout principles with responsive design
+5. Use proper widget lifecycle methods
+6. Implement proper error boundaries
+7. Use proper performance optimization techniques
+8. Follow proper accessibility guidelines
+9. Use flutter_screenutil for responsive sizing
+10. Prefer SizedBox over Container for whitespace
+`;
+
+// Performance Guidelines
+const performanceGuidelines = `
+1. Use proper image caching and optimization
+2. Implement proper list view optimization (ListView.builder)
+3. Use proper build methods optimization and const widgets
+4. Follow proper state management patterns to avoid unnecessary rebuilds
+5. Implement proper memory management
+6. Use proper platform channels when needed
+7. Follow proper compilation optimization techniques
+8. Cache expensive computations and API responses
+9. Use proper lazy loading for large datasets
+`;
+
+// API Integration Guidelines  
+const apiIntegrationGuidelines = `
+1. Use ApiService singleton for consistent HTTP client configuration
+2. Implement proper error handling for network requests
+3. Use proper token management with TokenManager
+4. Implement request/response interceptors for logging and auth
+5. Handle authentication flows properly with refresh tokens
+6. Use proper model classes for API responses with fromJson/toJson
+7. Implement proper repository pattern for data layer
+8. Cache API responses when appropriate
+9. Handle offline scenarios gracefully
+10. Use proper loading states and error states in UI
+`;
+
+// Routing Guidelines
+const routingGuidelines = `
+1. Use GoRouter for declarative routing with proper route names
+2. Define route constants in AppRouter class for consistency
+3. Use pageBuilder with SmoothPageTransition for unified smooth animations
+4. Pass parameters via state.extra when needed (not query parameters)
+5. Handle route parameters in pageBuilder using state.extra as appropriate type
+6. Use proper route guards for authentication and authorization
+7. Implement proper redirect logic in GoRouter redirect function
+8. Use context.go() for navigation with proper route names
+9. Handle deep linking and initial route properly
+10. Test all navigation flows to ensure routes are properly configured
+`;
