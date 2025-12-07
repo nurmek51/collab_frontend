@@ -69,7 +69,7 @@ class ClientOnboardingPageOne extends StatelessWidget {
             ),
             Positioned(
               left: 27.w,
-              top: 480.h,
+              top: 550.h,
               child: OnboardingNavigationButton(
                 label: 'Вперед',
                 onPressed: onNext,

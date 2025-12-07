@@ -1,7 +1,6 @@
 import '../../domain/entities/order.dart';
 import 'team_member_model.dart';
 
-/// Order model for data layer
 class OrderModel extends Order {
   const OrderModel({
     required super.id,
@@ -14,6 +13,7 @@ class OrderModel extends Order {
     super.companyId,
     super.telegramChatLink,
     super.documents,
+    super.contracts,
     super.projectName,
     super.projectLogo,
     super.orderSpecializations,
@@ -24,7 +24,6 @@ class OrderModel extends Order {
     super.hourlyRate,
   });
 
-  /// Create OrderModel from JSON
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['order_id']?.toString() ?? '',
@@ -41,12 +40,14 @@ class OrderModel extends Order {
       companyId: json['company_id']?.toString(),
       telegramChatLink: json['chat_link']?.toString(),
       documents: json['documents'] as Map<String, dynamic>?,
+      contracts: json['contracts'] is List
+          ? json['contracts'] as List<dynamic>
+          : null,
       orderSpecializations:
           json['order_specializations'] != null &&
               json['order_specializations'] is List
           ? json['order_specializations'] as List<dynamic>
           : null,
-      // Keep existing mappings for backward compatibility
       projectName: json['project_name']?.toString(),
       projectLogo: json['project_logo']?.toString(),
       teamMembers: json['team_members'] != null && json['team_members'] is List
@@ -75,7 +76,6 @@ class OrderModel extends Order {
     );
   }
 
-  /// Convert OrderModel to JSON
   Map<String, dynamic> toJson() {
     return {
       'order_id': id,
@@ -88,8 +88,8 @@ class OrderModel extends Order {
       'company_id': companyId,
       'chat_link': telegramChatLink,
       'documents': documents,
+      'contracts': contracts,
       'order_specializations': orderSpecializations,
-      // Keep existing for backward compatibility if needed
       'project_name': projectName,
       'project_logo': projectLogo,
       'team_members': teamMembers
@@ -102,7 +102,6 @@ class OrderModel extends Order {
     };
   }
 
-  /// Create OrderModel from Order entity
   factory OrderModel.fromEntity(Order order) {
     return OrderModel(
       id: order.id,
@@ -115,6 +114,7 @@ class OrderModel extends Order {
       companyId: order.companyId,
       telegramChatLink: order.telegramChatLink,
       documents: order.documents,
+      contracts: order.contracts,
       projectName: order.projectName,
       projectLogo: order.projectLogo,
       orderSpecializations: order.orderSpecializations,

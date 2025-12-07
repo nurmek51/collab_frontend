@@ -624,6 +624,76 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     }
   }
 
+  Future<void> _saveCompanyName(
+    AdminOrderModel order,
+    AdminCompanyModel company,
+    String newName,
+  ) async {
+    final fieldKey = 'companyName_${order.id}';
+    setState(() {
+      _savingFields[fieldKey] = true;
+    });
+
+    try {
+      if (company.companyId.isEmpty) {
+        throw Exception('Company id missing');
+      }
+
+      final response = await _companiesApi.updateCompany(
+        company.companyId,
+        companyName: newName.trim(),
+      );
+
+      final updatedCompany = AdminCompanyModel.fromJson(response);
+
+      if (!mounted) return;
+
+      setState(() {
+        // Override for this specific order view
+        _overrideCompanyByOrder[order.id] = updatedCompany;
+
+        // Update projects lists where this order appears
+        _projects = _projects.map((p) {
+          if (p.order.id == order.id) {
+            return AdminProjectModel(
+              order: p.order,
+              client: p.client,
+              company: updatedCompany,
+            );
+          }
+          return p;
+        }).toList();
+
+        _allProjects = _allProjects.map((p) {
+          if (p.order.id == order.id) {
+            return AdminProjectModel(
+              order: p.order,
+              client: p.client,
+              company: updatedCompany,
+            );
+          }
+          return p;
+        }).toList();
+
+        _editingFields[fieldKey] = false;
+        _savingFields[fieldKey] = false;
+      });
+    } catch (error) {
+      setState(() {
+        _savingFields[fieldKey] = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка сохранения: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _showChatLinkEditDialog(String orderId, String? currentChatLink) {
     final controller = TextEditingController(text: currentChatLink ?? '');
 
@@ -807,7 +877,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                 const SizedBox(width: 24),
                 _buildTopNavItem('Заказчики'),
                 const SizedBox(width: 24),
-                _buildTopNavItem('Исполнители'),
+                GestureDetector(
+                  onTap: () => context.go('/admin/freelancers'),
+                  child: _buildTopNavItem('Исполнители'),
+                ),
                 const Spacer(),
                 Row(
                   children: [
@@ -1070,53 +1143,23 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        project.displayName,
-                        style: TextStyle(
-                          fontFamily: 'Ubuntu',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 28,
-                          color: AppColors.adminPrimaryText,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _statusColor(order.status).withAlpha(31),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _statusLabel(order.status),
-                          style: TextStyle(
-                            fontFamily: 'Ubuntu',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: _statusColor(order.status),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            _buildProjectTitle(order, company),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _statusColor(order.status).withAlpha(31),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _statusLabel(order.status),
+                style: TextStyle(
+                  fontFamily: 'Ubuntu',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: _statusColor(order.status),
                 ),
-                IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset(
-                    'assets/svgs/edit_icon.svg',
-                    height: 20,
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
             _buildDescriptionCard(order),
@@ -1194,6 +1237,158 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProjectTitle(AdminOrderModel order, AdminCompanyModel company) {
+    final fieldKey = 'companyName_${order.id}';
+    final isEditing = _editingFields[fieldKey] ?? false;
+    final isSaving = _savingFields[fieldKey] ?? false;
+    final companyName = company.companyName?.isNotEmpty == true
+        ? company.companyName!
+        : order.title ?? 'Проект';
+
+    if (isEditing) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFCADDE1), width: 1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: TextField(
+              controller: _controllers[fieldKey],
+              maxLines: 1,
+              style: const TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w700,
+                fontSize: 28,
+                color: Color(0xFF353F49),
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                hintText: 'Название компании',
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                width: 130,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0x0D000000),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () => _cancelEditingField(fieldKey),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: const Color(0xFF353F49),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  child: const Text('Отменить'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 130,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          final newName = _controllers[fieldKey]?.text ?? '';
+                          _saveCompanyName(order, company, newName);
+                        },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text('Сохранить'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            companyName,
+            style: TextStyle(
+              fontFamily: 'Ubuntu',
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+              color: AppColors.adminPrimaryText,
+            ),
+          ),
+        ),
+        if (company.companyId.isNotEmpty)
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.adminAccentBlue.withAlpha(31),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.adminAccentBlue.withAlpha(51),
+                width: 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _startEditingField(fieldKey, companyName),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.edit,
+                    size: 18,
+                    color: AppColors.adminAccentBlue,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1629,9 +1824,9 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           },
           placeholder: displayName,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
         Text(
-          displayName,
+          client.displayName,
           style: TextStyle(
             fontFamily: 'Ubuntu',
             fontWeight: FontWeight.w600,

@@ -45,7 +45,7 @@ class AvailableSpecialization {
   final String skillLevel;
   final Map<String, dynamic>? conditions;
   final String? requirements;
-  final String vacancyId;
+  final String? vacancyId;
   final bool isOccupied;
   final String? occupiedByFreelancerId;
 
@@ -55,8 +55,8 @@ class AvailableSpecialization {
     required this.skillLevel,
     this.conditions,
     this.requirements,
-    required this.vacancyId,
-    required this.isOccupied,
+    this.vacancyId,
+    this.isOccupied = false,
     this.occupiedByFreelancerId,
   });
 
@@ -68,8 +68,8 @@ class AvailableSpecialization {
       skillLevel: json['skill_level'] as String,
       conditions: json['conditions'] as Map<String, dynamic>?,
       requirements: json['requirements'] as String?,
-      vacancyId: json['vacancy_id'] as String,
-      isOccupied: json['is_occupied'] as bool,
+      vacancyId: json['vacancy_id'] as String?,
+      isOccupied: json['is_occupied'] as bool? ?? false,
       occupiedByFreelancerId: json['occupied_by_freelancer_id'] as String?,
     );
   }

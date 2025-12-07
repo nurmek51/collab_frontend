@@ -13,11 +13,11 @@ class SpecializationConditionsModel extends SpecializationConditions {
   /// Create SpecializationConditionsModel from JSON
   factory SpecializationConditionsModel.fromJson(Map<String, dynamic> json) {
     return SpecializationConditionsModel(
-      salary: (json['salary'] as num).toDouble(),
-      payPer: json['pay_per'] as String,
-      requiredExperience: json['required_experience'] as int,
-      scheduleType: json['schedule_type'] as String,
-      formatType: json['format_type'] as String,
+      salary: json['salary'] is num ? (json['salary'] as num).toDouble() : 0.0,
+      payPer: json['pay_per'] as String? ?? 'hour',
+      requiredExperience: json['required_experience'] as int? ?? 0,
+      scheduleType: json['schedule_type'] as String? ?? 'full-time',
+      formatType: json['format_type'] as String? ?? 'remote',
     );
   }
 
@@ -48,9 +48,11 @@ class SpecializationOfferModel extends SpecializationOffer {
   /// Create SpecializationOfferModel from JSON
   factory SpecializationOfferModel.fromJson(Map<String, dynamic> json) {
     return SpecializationOfferModel(
-      specialization: json['specialization'] as String,
-      skillLevel: json['skill_level'] as String,
-      conditions: json['conditions'] != null
+      specialization: json['specialization'] as String? ?? '',
+      skillLevel: json['skill_level'] as String? ?? '',
+      conditions:
+          json['conditions'] != null &&
+              json['conditions'] is Map<String, dynamic>
           ? SpecializationConditionsModel.fromJson(
               json['conditions'] as Map<String, dynamic>,
             )

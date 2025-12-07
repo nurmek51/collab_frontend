@@ -12,14 +12,13 @@ import '../../../../auth/presentation/widgets/gradient_background.dart';
 import '../../../data/repositories/orders_repository_impl.dart';
 import '../../../domain/entities/order.dart';
 import '../../../domain/usecases/get_my_orders.dart';
-import '../../widgets/client/empty_orders_state.dart';
 import '../../widgets/client/onboarding_steps.dart';
 import '../../widgets/client/waiting_order_state.dart';
 import '../../widgets/client/active_order_state.dart';
 import '../../widgets/client/add_order_button.dart';
 import '../../widgets/client/callback_requested_state.dart';
+import '../../widgets/client/profile_popup_menu.dart';
 import '../../../../../shared/di/service_locator.dart';
-import '../../../../../shared/api/auth_api.dart';
 import '../../../../../shared/utils/help_utils.dart';
 import '../../../../../shared/services/callback_button_manager.dart';
 import '../../../../../shared/state/orders_state_manager.dart';
@@ -36,11 +35,10 @@ class _MyOrdersPageState extends State<MyOrdersPage>
     with WidgetsBindingObserver {
   List<Order> orders = [];
   bool isLoading = true;
-  late final AuthApi _authApi;
-  bool _profileButtonEnabled = true;
   late final GetMyOrders _getMyOrdersUseCase;
   late final OrdersStateManager _ordersStateManager;
   late final CallbackButtonManager _callbackButtonManager;
+  final GlobalKey _profileIconKey = GlobalKey();
 
   @override
   void initState() {
@@ -48,15 +46,11 @@ class _MyOrdersPageState extends State<MyOrdersPage>
     final apiService = sl<ApiService>();
     final repository = OrdersRepositoryImpl(apiService);
     _getMyOrdersUseCase = GetMyOrders(repository);
-    _authApi = sl<AuthApi>();
     _ordersStateManager = sl<OrdersStateManager>();
     _callbackButtonManager = CallbackButtonManager.getInstance('my_orders');
 
     // Listen to orders state changes
     _ordersStateManager.addListener(_onOrdersStateChanged);
-
-    // Check profile availability
-    _checkProfileAvailability();
 
     // Load orders on page open
     _loadOrders();
@@ -82,23 +76,6 @@ class _MyOrdersPageState extends State<MyOrdersPage>
         // ),
         // );
       }
-    }
-  }
-
-  Future<void> _checkProfileAvailability() async {
-    try {
-      final user = await _authApi.getCurrentUser();
-      final name = (user['name'] as String?)?.trim() ?? '';
-      final surname = (user['surname'] as String?)?.trim() ?? '';
-      if (name.isEmpty && surname.isEmpty) {
-        if (mounted) setState(() => _profileButtonEnabled = false);
-        // signal to user that profile is not available
-        HapticFeedback.mediumImpact();
-      } else {
-        if (mounted) setState(() => _profileButtonEnabled = true);
-      }
-    } catch (_) {
-      // Keep button enabled by default on errors
     }
   }
 
@@ -140,6 +117,15 @@ class _MyOrdersPageState extends State<MyOrdersPage>
   Future<void> _loadOrders() async {
     await _ordersStateManager.refreshOrders(() async {
       final fetchedOrders = await _getMyOrdersUseCase();
+
+      // Debug logging to trace order loading
+      debugPrint('📦 [MyOrdersPage] Fetched ${fetchedOrders.length} orders:');
+      for (final order in fetchedOrders) {
+        debugPrint(
+          '  - Order: ${order.title}, status: ${order.status}, hasContracts: ${order.hasContracts}, contracts: ${order.contracts}',
+        );
+      }
+
       // Sort orders: active (approved) orders first, then callback orders, then pending orders
       fetchedOrders.sort((a, b) {
         // Approved orders always first
@@ -215,20 +201,9 @@ class _MyOrdersPageState extends State<MyOrdersPage>
                     ),
                   ),
                   GestureDetector(
+                    key: _profileIconKey,
                     onTap: () {
-                      if (_profileButtonEnabled) {
-                        context.push('/client-profile');
-                      } else {
-                        HapticFeedback.lightImpact();
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //   const SnackBar(
-                        //     content: Text(
-                        //       'Профиль клиента недоступен. Сначала создайте заказ.',
-                        //     ),
-                        //     backgroundColor: Colors.orange,
-                        //   ),
-                        // );
-                      }
+                      showProfilePopupMenu(context, _profileIconKey);
                     },
                     child: Container(
                       width: 29.w,
@@ -267,58 +242,8 @@ class _MyOrdersPageState extends State<MyOrdersPage>
   List<Widget> _buildEmptyStateSlivers() {
     return [
       SliverPadding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        sliver: const SliverToBoxAdapter(child: EmptyOrdersState()),
-      ),
-      SliverToBoxAdapter(child: SizedBox(height: 30.h)),
-      SliverPadding(
-        padding: EdgeInsets.only(left: 25.w),
-        sliver: SliverToBoxAdapter(
-          child: Text(
-            AppLocalizations.of(context)!.orders_getting_started_title,
-            style: AppTextStyles.sectionTitle,
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(child: SizedBox(height: 15.h)),
-      SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: 22.w),
         sliver: const SliverToBoxAdapter(child: OnboardingSteps()),
-      ),
-      SliverToBoxAdapter(child: SizedBox(height: 30.h)),
-      SliverPadding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        sliver: SliverToBoxAdapter(
-          child: SizedBox(
-            width: 354.w,
-            height: 50.h,
-            child: ElevatedButton(
-              onPressed: () {
-                context.push('/new-order');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.black,
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 15.h),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.orders_create_order_button,
-                    style: AppTextStyles.buttonText,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
       _buildEmptyFooterSliver(),
     ];
@@ -345,6 +270,33 @@ class _MyOrdersPageState extends State<MyOrdersPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Create order button
+          SizedBox(
+            width: 354.w,
+            height: 50.h,
+            child: ElevatedButton(
+              onPressed: () {
+                context.push('/new-order');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.black,
+                foregroundColor: AppColors.white,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                padding: EdgeInsets.symmetric(vertical: 15.h),
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.orders_create_order_button,
+                style: AppTextStyles.buttonText,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          SizedBox(height: 28.h),
+          // Callback link
           ListenableBuilder(
             listenable: _callbackButtonManager,
             builder: (context, child) {
@@ -385,23 +337,19 @@ class _MyOrdersPageState extends State<MyOrdersPage>
               );
             },
           ),
-          SizedBox(height: 16.h),
-          GestureDetector(
-            onTap: () async {
-              await HelpUtils.showSocialLinksModal(context);
-            },
-            child: Text(
-              AppLocalizations.of(context)!.orders_help_button,
-              style: AppTextStyles.linkText,
-              textAlign: TextAlign.center,
-            ),
-          ),
         ],
       ),
     );
   }
 
   List<Widget> _buildOrdersSlivers() {
+    debugPrint('🎨 [MyOrdersPage] Building ${orders.length} order slivers');
+    for (int i = 0; i < orders.length; i++) {
+      debugPrint(
+        '  - Building order $i: ${orders[i].title}, status: ${orders[i].status}, hasContracts: ${orders[i].hasContracts}',
+      );
+    }
+
     return [
       SliverPadding(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -409,6 +357,9 @@ class _MyOrdersPageState extends State<MyOrdersPage>
           delegate: SliverChildBuilderDelegate((context, index) {
             if (index < orders.length) {
               final order = orders[index];
+              debugPrint(
+                '🔧 [MyOrdersPage] Rendering order at index $index: ${order.title}',
+              );
               return Padding(
                 padding: EdgeInsets.only(bottom: 20.h),
                 child: _buildOrderWidget(order),
@@ -462,7 +413,9 @@ class _MyOrdersPageState extends State<MyOrdersPage>
 
   String _getPageTitle() {
     if (orders.isEmpty) {
-      return 'Мои заказы';
+      return AppLocalizations.of(
+        context,
+      )!.orders_getting_started_title.replaceAll(':', '');
     } else {
       return 'Мои проекты';
     }

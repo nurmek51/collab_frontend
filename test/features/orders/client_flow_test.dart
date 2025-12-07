@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:collab_frontend/shared/state/orders_state_manager.dart';
-import 'package:collab_frontend/shared/services/callback_button_manager.dart';
-import 'package:collab_frontend/features/orders/domain/entities/order.dart';
+import 'package:Collab/shared/state/orders_state_manager.dart';
+import 'package:Collab/shared/services/callback_button_manager.dart';
+import 'package:Collab/features/orders/domain/entities/order.dart';
 
 void main() {
   group('Orders State Manager Tests', () {

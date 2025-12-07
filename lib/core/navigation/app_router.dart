@@ -16,6 +16,7 @@ import '../../features/orders/presentation/pages/freelancer/feed_page.dart';
 import '../../features/orders/presentation/pages/client/my_orders_page.dart';
 import '../../features/orders/presentation/pages/client/new_order_page.dart';
 import '../../features/orders/presentation/pages/client/client_order_details_page.dart';
+import '../../features/orders/presentation/pages/client/documents_list_page.dart';
 import '../../features/orders/presentation/pages/freelancer/response_success_page.dart';
 import '../../features/orders/presentation/pages/freelancer/callback_success_page.dart';
 import '../../features/orders/presentation/pages/client/callback_accepted_page.dart';
@@ -28,6 +29,7 @@ import '../../features/profile/presentation/pages/specialization_details_page.da
 import '../../features/payments/presentation/pages/payments_soon_page.dart';
 import '../../../shared/widgets/unified_freelancer_bottom_tab_bar.dart';
 import '../../features/admin/presentation/pages/admin_orders_page.dart';
+import '../../features/admin/presentation/pages/admin_freelancers_page.dart';
 import '../../features/admin/presentation/pages/admin_login_page.dart';
 import '../../features/onboarding/presentation/pages/client_onboarding_flow_page.dart';
 import '../../../shared/di/service_locator.dart';
@@ -53,6 +55,7 @@ class AppRouter {
   static const String myOrdersRoute = '/my-orders';
   static const String newOrderRoute = '/new-order';
   static const String clientOrderDetailsRoute = '/client-order-details';
+  static const String clientDocumentsRoute = '/client-documents';
   static const String responseSuccessRoute = '/response-success';
   static const String callbackSuccessRoute = '/callback-success';
   static const String callbackAcceptedRoute = '/callback-accepted';
@@ -65,6 +68,7 @@ class AppRouter {
   static const String specializationDetailsRoute = '/specialization-details';
   static const String adminRoute = '/admin';
   static const String adminLoginRoute = '/admin/login';
+  static const String adminFreelancersRoute = '/admin/freelancers';
   static const String clientOnboardingRoute = '/client-onboarding';
 
   static final GoRouter router = GoRouter(
@@ -191,6 +195,11 @@ class AppRouter {
         path: adminRoute,
         name: 'admin',
         builder: (context, state) => const AdminOrdersPage(),
+      ),
+      GoRoute(
+        path: adminFreelancersRoute,
+        name: 'admin-freelancers',
+        builder: (context, state) => const AdminFreelancersPage(),
       ),
       GoRoute(
         path: adminLoginRoute,
@@ -451,6 +460,17 @@ class AppRouter {
           return SmoothPageTransition.build(
             key: ValueKey('client-order-details-$orderId'),
             child: ClientOrderDetailsPage(orderId: orderId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '$clientDocumentsRoute/:orderId',
+        name: 'client-documents',
+        pageBuilder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          return SmoothPageTransition.build(
+            key: ValueKey('client-documents-$orderId'),
+            child: DocumentsListPage(orderId: orderId),
           );
         },
       ),

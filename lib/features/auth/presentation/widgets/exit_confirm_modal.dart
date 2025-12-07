@@ -90,7 +90,7 @@ class _ExitConfirmModalState extends State<ExitConfirmModal> {
                         ),
                         child: Center(
                           child: SvgPicture.asset(
-                            'svgs/exit_confirm_icon.svg',
+                            'assets/svgs/exit_confirm_icon.svg',
                             width: 28.w,
                             height: 28.w,
                           ),

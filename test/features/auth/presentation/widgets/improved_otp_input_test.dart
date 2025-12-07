@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:collab_frontend/features/auth/presentation/widgets/improved_otp_input.dart';
+import 'package:Collab/features/auth/presentation/widgets/improved_otp_input.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() {

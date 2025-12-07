@@ -9,14 +9,23 @@ class OrdersApi {
 
   /// Get list of approved orders (for freelancers)
   Future<OrdersFeedResponse> getOrders({int page = 1, int size = 20}) async {
-    final data = await _client.get<Map<String, dynamic>>(
+    final data = await _client.get<dynamic>(
       '/orders/',
       queryParameters: {'page': page, 'size': size},
-      fromJson: (d) => d as Map<String, dynamic>,
+      fromJson: (d) => d,
     );
 
-    // Parse into a typed response model
-    return OrdersFeedResponse.fromJson(data);
+    if (data is Map<String, dynamic>) {
+      return OrdersFeedResponse.fromJson(data);
+    } else {
+      return const OrdersFeedResponse(
+        items: [],
+        total: 0,
+        page: 1,
+        size: 20,
+        pages: 0,
+      );
+    }
   }
 
   /// Get order details by ID

@@ -1,6 +1,5 @@
 import 'team_member.dart';
 
-/// Order entity representing a client order
 class Order {
   final String id;
   final String title;
@@ -12,6 +11,7 @@ class Order {
   final String? companyId;
   final String? telegramChatLink;
   final Map<String, dynamic>? documents;
+  final List<dynamic>? contracts;
   final String? projectName;
   final String? projectLogo;
   final List<dynamic>? orderSpecializations;
@@ -32,6 +32,7 @@ class Order {
     this.companyId,
     this.telegramChatLink,
     this.documents,
+    this.contracts,
     this.projectName,
     this.projectLogo,
     this.orderSpecializations,
@@ -41,6 +42,8 @@ class Order {
     this.paymentType,
     this.hourlyRate,
   });
+
+  bool get hasContracts => contracts != null && contracts!.isNotEmpty;
 
   @override
   bool operator ==(Object other) {
@@ -56,6 +59,7 @@ class Order {
         other.companyId == companyId &&
         other.telegramChatLink == telegramChatLink &&
         other.documents == documents &&
+        other.contracts == contracts &&
         other.projectName == projectName &&
         other.projectLogo == projectLogo &&
         other.orderSpecializations == orderSpecializations &&
@@ -75,6 +79,7 @@ class Order {
         companyId.hashCode ^
         telegramChatLink.hashCode ^
         documents.hashCode ^
+        contracts.hashCode ^
         projectName.hashCode ^
         projectLogo.hashCode ^
         orderSpecializations.hashCode ^

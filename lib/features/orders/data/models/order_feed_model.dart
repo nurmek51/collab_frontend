@@ -12,7 +12,7 @@ class OrderFeedModel {
   final String? chatLink;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final Map<String, dynamic>? contracts;
+  final List<dynamic>? contracts;
   final List<String>? orderColleagues;
 
   const OrderFeedModel({
@@ -48,21 +48,23 @@ class OrderFeedModel {
   /// Create OrderFeedModel from JSON
   factory OrderFeedModel.fromJson(Map<String, dynamic> json) {
     return OrderFeedModel(
-      orderId: json['order_id'] as String,
-      companyId: json['company_id'] as String,
-      orderDescription: json['order_description'] as String,
-      orderStatus: json['order_status'] as String,
-      orderCompleteStatus: json['order_complete_status'] as String,
-      orderTitle: json['order_title'] as String,
+      orderId: json['order_id'] as String? ?? '',
+      companyId: json['company_id'] as String? ?? '',
+      orderDescription: json['order_description'] as String? ?? '',
+      orderStatus: json['order_status'] as String? ?? '',
+      orderCompleteStatus: json['order_complete_status'] as String? ?? '',
+      orderTitle: json['order_title'] as String? ?? '',
       orderSpecializations: _parseSpecializationOffers(
         json['order_specializations'],
       ),
       chatLink: json['chat_link'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'] as String)
           : null,
-      contracts: json['contracts'] as Map<String, dynamic>?,
+      contracts: json['contracts'] as List<dynamic>?,
       orderColleagues: json['order_colleagues'] != null
           ? (json['order_colleagues'] as List<dynamic>).cast<String>()
           : null,
@@ -127,14 +129,18 @@ class OrdersFeedResponse {
 
   /// Create OrdersFeedResponse from JSON
   factory OrdersFeedResponse.fromJson(Map<String, dynamic> json) {
+    final items = json['items'];
     return OrdersFeedResponse(
-      items: (json['items'] as List<dynamic>)
-          .map((item) => OrderFeedModel.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      total: json['total'] as int,
-      page: json['page'] as int,
-      size: json['size'] as int,
-      pages: json['pages'] as int,
+      items: items is List<dynamic>
+          ? items
+                .whereType<Map<String, dynamic>>()
+                .map((item) => OrderFeedModel.fromJson(item))
+                .toList()
+          : [],
+      total: json['total'] as int? ?? 0,
+      page: json['page'] as int? ?? 1,
+      size: json['size'] as int? ?? 20,
+      pages: json['pages'] as int? ?? 0,
     );
   }
 }

@@ -4,20 +4,70 @@ import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/navigation/app_router.dart';
+import '../../../../../shared/api/companies_api.dart';
+import '../../../../../shared/di/service_locator.dart';
 import '../../../../../shared/utils/deep_link_utils.dart';
 import '../../../domain/entities/order.dart';
 
 /// Widget displaying active order with project details for clients
-class ActiveOrderState extends StatelessWidget {
+class ActiveOrderState extends StatefulWidget {
   final Order order;
 
   const ActiveOrderState({super.key, required this.order});
 
   @override
+  State<ActiveOrderState> createState() => _ActiveOrderStateState();
+}
+
+class _ActiveOrderStateState extends State<ActiveOrderState> {
+  String? _companyName;
+  String? _companyLogo;
+  bool _isLoadingCompany = false;
+  late final CompaniesApi _companiesApi;
+
+  @override
+  void initState() {
+    super.initState();
+    _companiesApi = sl<CompaniesApi>();
+    _loadCompanyData();
+  }
+
+  Future<void> _loadCompanyData() async {
+    if (widget.order.companyId == null) return;
+
+    setState(() {
+      _isLoadingCompany = true;
+    });
+
+    try {
+      final companyData = await _companiesApi.getCompanyById(
+        widget.order.companyId!,
+      );
+      if (mounted) {
+        setState(() {
+          if (companyData != null) {
+            _companyName = companyData['company_name'] as String?;
+            _companyLogo = companyData['company_logo'] as String?;
+          }
+          _isLoadingCompany = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCompany = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final displayName = _companyName ?? widget.order.title;
+
     return GestureDetector(
       onTap: () {
-        context.push('${AppRouter.clientOrderDetailsRoute}/${order.id}');
+        context.push('${AppRouter.clientOrderDetailsRoute}/${widget.order.id}');
       },
       child: Container(
         width: 355.w,
@@ -32,14 +82,23 @@ class ActiveOrderState extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Project name
+                // Company name
                 Expanded(
-                  child: Text(
-                    order.title.isNotEmpty ? order.title : 'Проект',
-                    style: AppTextStyles.projectTitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: _isLoadingCompany
+                      ? Container(
+                          height: 20.h,
+                          width: 100.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightGrayBackground,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        )
+                      : Text(
+                          displayName.isNotEmpty ? displayName : 'Проект',
+                          style: AppTextStyles.projectTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                 ),
 
                 // Project logo
@@ -49,18 +108,19 @@ class ActiveOrderState extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4.r),
                   ),
-                  child: order.projectLogo != null
+                  child: _companyLogo != null
+                      ? Image.network(
+                          _companyLogo!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildDefaultLogo(),
+                        )
+                      : widget.order.projectLogo != null
                       ? Image.asset(
                           'assets/images/project_logo-3e4cfa.png',
                           fit: BoxFit.contain,
                         )
-                      : Container(
-                          color: AppColors.lightGrayBackground,
-                          child: const Icon(
-                            Icons.business,
-                            color: AppColors.profileIconColor,
-                          ),
-                        ),
+                      : _buildDefaultLogo(),
                 ),
               ],
             ),
@@ -79,7 +139,7 @@ class ActiveOrderState extends StatelessWidget {
                 GestureDetector(
                   onTap: () {
                     context.push(
-                      '${AppRouter.clientOrderDetailsRoute}/${order.id}',
+                      '${AppRouter.clientOrderDetailsRoute}/${widget.order.id}',
                     );
                   },
                   child: Container(
@@ -105,18 +165,24 @@ class ActiveOrderState extends StatelessWidget {
     );
   }
 
+  Widget _buildDefaultLogo() {
+    return Container(
+      color: AppColors.lightGrayBackground,
+      child: const Icon(Icons.business, color: AppColors.profileIconColor),
+    );
+  }
+
   Widget _buildActionsGrid() {
-    final bool hasDocuments =
-        order.documents != null && order.documents!.isNotEmpty;
-    final String? chatLink = order.telegramChatLink;
+    final bool hasContracts = widget.order.hasContracts;
+    final String? chatLink = widget.order.telegramChatLink;
     final bool hasChatLink = chatLink != null && chatLink.isNotEmpty;
 
-    if (!hasDocuments) {
+    if (!hasContracts) {
       return Center(
         child: _buildWorkingChatCard(
           chatLink: chatLink,
           hasChatLink: hasChatLink,
-          width: 314.w, // Match the width of "information about project" button
+          width: 314.w,
         ),
       );
     }
@@ -127,7 +193,11 @@ class ActiveOrderState extends StatelessWidget {
         _buildActionCard(
           icon: _buildDocumentIcon(),
           title: 'Документы',
-          onTap: () {},
+          onTap: () {
+            context.push(
+              '${AppRouter.clientDocumentsRoute}/${widget.order.id}',
+            );
+          },
         ),
         SizedBox(width: 11.w),
         _buildWorkingChatCard(chatLink: chatLink, hasChatLink: hasChatLink),

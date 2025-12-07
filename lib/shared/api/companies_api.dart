@@ -79,4 +79,30 @@ class CompaniesApi {
       },
     );
   }
+
+  /// Update company fields (partial update supported)
+  Future<Map<String, dynamic>> updateCompany(
+    String companyId, {
+    String? companyName,
+    String? companyIndustry,
+    String? clientPosition,
+    int? companySize,
+    String? companyLogo,
+    String? companyDescription,
+  }) async {
+    final data = <String, dynamic>{};
+    if (companyName != null) data['company_name'] = companyName;
+    if (companyIndustry != null) data['company_industry'] = companyIndustry;
+    if (clientPosition != null) data['client_position'] = clientPosition;
+    if (companySize != null) data['company_size'] = companySize;
+    if (companyLogo != null) data['company_logo'] = companyLogo;
+    if (companyDescription != null)
+      data['company_description'] = companyDescription;
+
+    return await _client.put<Map<String, dynamic>>(
+      '/companies/id/$companyId',
+      data: data,
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+  }
 }

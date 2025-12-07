@@ -1,6 +1,6 @@
 {
-    "name": "collab_frontend",
-    "short_name": "collab_frontend",
+    "name": "Collab",
+    "short_name": "Collab",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

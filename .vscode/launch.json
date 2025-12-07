@@ -6,18 +6,18 @@
     "configurations": [
         
         {
-            "name": "collab_frontend",
+            "name": "Collab",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "collab_frontend (profile mode)",
+            "name": "Collab (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "collab_frontend (release mode)",
+            "name": "Collab (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

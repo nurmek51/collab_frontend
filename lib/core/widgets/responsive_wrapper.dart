@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'debug_overlay.dart';
 
 /// Responsive wrapper that properly handles flutter_screenutil on web.
 ///
@@ -40,7 +39,7 @@ class ResponsiveWrapper extends StatelessWidget {
             designSize: const Size(_mobileWidth, _mobileHeight),
             minTextAdapt: true,
             splitScreenMode: true,
-            builder: (context, child) => DebugOverlay(child: this.child),
+            builder: (context, child) => this.child,
           );
         }
 
@@ -63,7 +62,7 @@ class ResponsiveWrapper extends StatelessWidget {
               designSize: Size(constraints.maxWidth, constraints.maxHeight),
               minTextAdapt: true,
               splitScreenMode: true,
-              builder: (context, child) => DebugOverlay(child: this.child),
+              builder: (context, child) => this.child,
             ),
           ),
         );

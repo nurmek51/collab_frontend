@@ -19,11 +19,29 @@ class OrdersRepositoryImpl implements OrdersRepository {
         limit: limit,
         offset: offset,
       );
-      return response
-          .map((json) => OrderModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      debugPrint(
+        '📥 [OrdersRepositoryImpl] Received ${response.length} orders from API',
+      );
+      final orders = <Order>[];
+      for (final json in response) {
+        try {
+          debugPrint(
+            '📋 [OrdersRepositoryImpl] Parsing order: ${json['order_title']}, contracts: ${json['contracts']}',
+          );
+          final order = OrderModel.fromJson(json as Map<String, dynamic>);
+          debugPrint(
+            '✅ [OrdersRepositoryImpl] Parsed order: ${order.title}, hasContracts: ${order.hasContracts}',
+          );
+          orders.add(order);
+        } catch (e, stackTrace) {
+          debugPrint('❌ [OrdersRepositoryImpl] Error parsing order: $e');
+          debugPrint('❌ [OrdersRepositoryImpl] Stack trace: $stackTrace');
+          debugPrint('❌ [OrdersRepositoryImpl] Order JSON: $json');
+        }
+      }
+      debugPrint('📤 [OrdersRepositoryImpl] Returning ${orders.length} orders');
+      return orders;
     } catch (e) {
-      // Return empty list for now - in production, proper error handling would be needed
       debugPrint('❌ [OrdersRepositoryImpl] Error fetching my orders: $e');
       return [];
     }

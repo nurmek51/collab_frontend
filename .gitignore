@@ -27,11 +27,15 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+*.g.dart
+*.freezed.dart
+*.mocks.dart
 
 # Symbolication related
 app.*.symbols
@@ -43,6 +47,56 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/local.properties
+/android/captures/
+/android/gradlew
+/android/gradlew.bat
+
+# iOS specific
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/DerivedData/
+**/ios/xcuserdata/
+**/ios/*.xcworkspace/xcuserdata/
+**/ios/*.xcodeproj/xcuserdata/
+**/ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+**/ios/Podfile.lock
+
+# macOS specific
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/ephemeral/
+**/macos/Podfile.lock
+
+# Distribution / Archives
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcarchive
+*.appex
+
+# Fastlane
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+**/fastlane/README.md
+
+# Code signing
+*.mobileprovision
+*.p12
+*.cer
+*.certSigningRequest
 
 # Playwright
 node_modules/
@@ -51,3 +105,28 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+secrets/
+keys/
+
+# Crash logs
+crash_log.txt
+
+# Test related
+*.lcov
+lcov.info
+
+# FVM (Flutter Version Management)
+.fvm/
+.fvmrc
+
+# Melos
+.melos/
+
+assets/Appicons/

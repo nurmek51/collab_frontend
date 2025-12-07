@@ -1,4 +1,4 @@
-package com.example.collab_frontend
+package com.example.Collab
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,4 +1,4 @@
-import 'package:collab_frontend/core/constants/specialization_constants.dart';
+import 'package:Collab/core/constants/specialization_constants.dart';
 
 /// Freelancer model for displaying colleague information
 class FreelancerModel {
@@ -102,13 +102,19 @@ class FreelancerModel {
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      paymentInfo: json['payment_info'] != null
+      paymentInfo:
+          json['payment_info'] != null &&
+              (json['payment_info'] as Map).isNotEmpty
           ? Map<String, String>.from(json['payment_info'] as Map)
           : null,
-      socialLinks: json['social_links'] != null
+      socialLinks:
+          json['social_links'] != null &&
+              (json['social_links'] as Map).isNotEmpty
           ? Map<String, String>.from(json['social_links'] as Map)
           : null,
-      portfolioLinks: json['portfolio_links'] != null
+      portfolioLinks:
+          json['portfolio_links'] != null &&
+              (json['portfolio_links'] as Map).isNotEmpty
           ? Map<String, String>.from(json['portfolio_links'] as Map)
           : null,
       avatarUrl: json['avatar_url'] as String?,
@@ -155,7 +161,8 @@ class SpecializationWithLevel {
   factory SpecializationWithLevel.fromJson(Map<String, dynamic> json) {
     return SpecializationWithLevel(
       specialization: json['specialization'] as String,
-      skillLevel: json['skill_level'] as String?,
+      // Support both 'level' and 'skill_level' keys for compatibility
+      skillLevel: (json['level'] ?? json['skill_level']) as String?,
     );
   }
 

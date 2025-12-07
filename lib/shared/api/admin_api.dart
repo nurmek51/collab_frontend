@@ -61,4 +61,28 @@ class AdminApi {
       fromJson: (data) => data as Map<String, dynamic>,
     );
   }
+
+  /// Get pending freelancers for admin review
+  Future<Map<String, dynamic>> getPendingFreelancers({
+    int page = 1,
+    int size = 20,
+  }) async {
+    return await _client.get<Map<String, dynamic>>(
+      '/admin/freelancers/pending',
+      queryParameters: {'page': page, 'size': size},
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  /// Approve or reject a freelancer
+  Future<Map<String, dynamic>> updateFreelancerStatus({
+    required String freelancerId,
+    required String status,
+  }) async {
+    return await _client.put<Map<String, dynamic>>(
+      '/admin/freelancers/$freelancerId/approve',
+      data: {'status': status},
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+  }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 // Simple test to verify the guard file compiles correctly
-import 'package:collab_frontend/shared/guards/freelancer_profile_guard.dart';
+import 'package:Collab/shared/guards/freelancer_profile_guard.dart';
 
 void main() {
   group('FreelancerProfileGuard', () {
