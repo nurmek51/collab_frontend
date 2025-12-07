@@ -12,7 +12,7 @@ class FreelancerFlowDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: const BoxDecoration(color: AppColors.backgroundColor),
         child: SafeArea(
           child: Padding(
             padding: EdgeInsets.all(20.w),

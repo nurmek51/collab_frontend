@@ -93,7 +93,7 @@ class _AddOrderSpecializationModalState
           width: 440,
           height: double.infinity,
           decoration: const BoxDecoration(
-            gradient: AppColors.backgroundGradient,
+            color: AppColors.backgroundColor,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(40),
               bottomLeft: Radius.circular(40),

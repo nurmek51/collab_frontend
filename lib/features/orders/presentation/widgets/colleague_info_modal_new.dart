@@ -39,14 +39,7 @@ class ColleagueInfoModal extends StatelessWidget {
             bottom: 0,
             child: Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment(-1, -1), // -45 degrees
-                  end: Alignment(1, 1),
-                  colors: [
-                    Color(0xFFBBEBF5), // rgba(187, 235, 245, 1)
-                    Color(0xFFFFE7E1), // rgba(255, 231, 225, 1)
-                  ],
-                ),
+                color: AppColors.backgroundColor,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(24.r),
                   topRight: Radius.circular(24.r),

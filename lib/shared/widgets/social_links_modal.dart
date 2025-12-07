@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/constants/app_colors.dart';
 
 class SocialLinksModal extends StatelessWidget {
   final String telegramUrl;
@@ -21,11 +22,7 @@ class SocialLinksModal extends StatelessWidget {
       width: screenWidth,
       height: 382.h,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFBBEBF5), Color(0xFFFFE7E1)],
-        ),
+        color: AppColors.backgroundColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Stack(

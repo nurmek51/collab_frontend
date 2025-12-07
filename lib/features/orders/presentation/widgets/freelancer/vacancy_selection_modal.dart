@@ -89,7 +89,7 @@ class _VacancySelectionModalState extends State<VacancySelectionModal> {
     return Container(
       height: 400.h,
       decoration: BoxDecoration(
-        gradient: AppColors.backgroundGradient,
+        color: AppColors.backgroundColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24.r),
           topRight: Radius.circular(24.r),

@@ -75,7 +75,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: const BoxDecoration(color: AppColors.backgroundColor),
         child: SafeArea(
           child: isLoading
               ? const Center(child: CircularProgressIndicator())

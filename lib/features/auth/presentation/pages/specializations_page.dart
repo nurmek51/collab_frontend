@@ -402,8 +402,8 @@ class _SpecializationsPageState extends State<SpecializationsPage>
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              AppColors.gradientEnd.withOpacity(0.2),
-                              AppColors.gradientEnd.withOpacity(0.4),
+                              AppColors.backgroundColor.withOpacity(0.2),
+                              AppColors.backgroundColor.withOpacity(0.4),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),

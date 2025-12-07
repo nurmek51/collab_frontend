@@ -14,7 +14,7 @@ class ResponseSuccessPage extends StatelessWidget {
       body: Container(
         width: 394.w,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: const BoxDecoration(color: AppColors.backgroundColor),
         child: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -30,11 +30,7 @@ class _SkillLevelModalState extends State<SkillLevelModal> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-          colors: [Color(0xFFBBEBF5), Color(0xFFFFE7E1)],
-        ),
+        color: AppColors.backgroundColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
       child: Column(

@@ -12,7 +12,7 @@ class OnboardingWrapper extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+      decoration: const BoxDecoration(color: AppColors.backgroundColor),
       child: SafeArea(
         top: true,
         bottom: false,

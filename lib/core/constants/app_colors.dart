@@ -8,18 +8,7 @@ class AppColors {
   static const Color black = Color(0xFF000000);
   static const Color white = Color(0xFFFFFFFF);
 
-  // Gradient colors from Figma design
-  static const Color gradientStart = Color(
-    0xFFBBEBF5,
-  ); // rgba(187, 235, 245, 1)
-  static const Color gradientEnd = Color(0xFFFFE7E1); // rgba(255, 231, 225, 1)
-
-  // Background gradient
-  static const LinearGradient backgroundGradient = LinearGradient(
-    begin: Alignment.centerRight,
-    end: Alignment.centerLeft,
-    colors: [gradientStart, gradientEnd],
-  );
+  static const Color backgroundColor = Color(0xFFE8F0F1);
 
   // Button colors
   static const Color buttonBackground = black;

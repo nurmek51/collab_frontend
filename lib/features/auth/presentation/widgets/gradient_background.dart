@@ -13,7 +13,7 @@ class GradientBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppColors.backgroundGradient,
+        color: AppColors.backgroundColor,
         borderRadius: kIsWeb
             ? null
             : BorderRadius.circular(AppDimensions.screenBorderRadius),
