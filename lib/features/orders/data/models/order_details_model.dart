@@ -51,7 +51,7 @@ class OrderDetailsModel {
   final String? chatLink;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final Map<String, dynamic>? contracts;
+  final List<Map<String, dynamic>>? contracts;
   final List<String>? orderColleagues;
 
   const OrderDetailsModel({
@@ -86,7 +86,7 @@ class OrderDetailsModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
-      contracts: json['contracts'] as Map<String, dynamic>?,
+      contracts: _parseContracts(json['contracts']),
       orderColleagues: json['order_colleagues'] != null
           ? (json['order_colleagues'] as List<dynamic>).cast<String>()
           : null,
@@ -130,5 +130,13 @@ class OrderDetailsModel {
           .toList();
     }
     return [];
+  }
+
+  /// Helper method to parse contracts from the API response
+  static List<Map<String, dynamic>>? _parseContracts(dynamic data) {
+    if (data is List<dynamic>) {
+      return data.whereType<Map<String, dynamic>>().toList();
+    }
+    return null;
   }
 }

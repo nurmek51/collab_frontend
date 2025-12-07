@@ -47,7 +47,7 @@ class _DocumentsListPageState extends State<DocumentsListPage> {
               .map((json) => Contract.fromJson(json))
               .toList();
         } else if (contractsData is Map<String, dynamic>) {
-          contracts = contractsData.values
+          contracts = (contractsData.values as List)
               .whereType<Map<String, dynamic>>()
               .map((json) => Contract.fromJson(json))
               .toList();
