@@ -246,6 +246,84 @@ class _FreelancerFormPageState extends State<FreelancerFormPage> {
     );
   }
 
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  bool _validateAllFields({
+    required String name,
+    required String surname,
+    required String email,
+    required String city,
+    required String iin,
+  }) {
+    if (name.isEmpty) {
+      _setErrorMessage('Имя обязательно');
+      return false;
+    }
+
+    if (name.length < 2) {
+      _setErrorMessage('Имя должно содержать минимум 2 символа');
+      return false;
+    }
+
+    if (surname.isEmpty) {
+      _setErrorMessage('Фамилия обязательна');
+      return false;
+    }
+
+    if (surname.length < 2) {
+      _setErrorMessage('Фамилия должна содержать минимум 2 символа');
+      return false;
+    }
+
+    if (email.isEmpty) {
+      _setErrorMessage('Email обязателен');
+      return false;
+    }
+
+    if (!_isValidEmail(email)) {
+      _setErrorMessage('Введите корректный email (например: user@example.com)');
+      return false;
+    }
+
+    if (city.isEmpty) {
+      _setErrorMessage('Город обязателен');
+      return false;
+    }
+
+    if (city.length < 2) {
+      _setErrorMessage('Город должен содержать минимум 2 символа');
+      return false;
+    }
+
+    if (iin.isEmpty) {
+      _setErrorMessage('ИИН обязателен');
+      return false;
+    }
+
+    if (iin.length != 12) {
+      _setErrorMessage('ИИН должен содержать ровно 12 цифр');
+      return false;
+    }
+
+    if (!RegExp(r'^\d{12}$').hasMatch(iin)) {
+      _setErrorMessage('ИИН должен содержать только цифры');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _setErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
+    });
+  }
+
   Future<void> _persistFields() async {
     // Load current accumulated state and update with form inputs
     final currentState = await _service.getCurrentState();
@@ -265,45 +343,19 @@ class _FreelancerFormPageState extends State<FreelancerFormPage> {
       _errorMessage = null;
     });
 
-    // Validate required fields
     final name = _nameController.text.trim();
     final surname = _surnameController.text.trim();
     final email = _emailController.text.trim();
     final city = _cityController.text.trim();
     final iin = _iinController.text.trim();
 
-    if (name.isEmpty) {
-      setState(() {
-        _errorMessage = 'Имя обязательно';
-      });
-      return;
-    }
-
-    if (surname.isEmpty) {
-      setState(() {
-        _errorMessage = 'Фамилия обязательна';
-      });
-      return;
-    }
-
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() {
-        _errorMessage = 'Введите корректный email';
-      });
-      return;
-    }
-
-    if (city.isEmpty) {
-      setState(() {
-        _errorMessage = 'Город обязателен';
-      });
-      return;
-    }
-
-    if (iin.isEmpty || iin.length < 12) {
-      setState(() {
-        _errorMessage = 'ИИН должен содержать 12 цифр';
-      });
+    if (!_validateAllFields(
+      name: name,
+      surname: surname,
+      email: email,
+      city: city,
+      iin: iin,
+    )) {
       return;
     }
 
@@ -318,9 +370,7 @@ class _FreelancerFormPageState extends State<FreelancerFormPage> {
       }
     } catch (error) {
       if (mounted) {
-        setState(() {
-          _errorMessage = error.toString();
-        });
+        _setErrorMessage('Ошибка при сохранении данных: ${error.toString()}');
       }
     }
   }
