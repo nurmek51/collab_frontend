@@ -164,15 +164,10 @@ class _DocumentsListPageState extends State<DocumentsListPage> {
                 context.go('/');
               }
             },
-            child: Text(
-              '􀰌',
-              style: TextStyle(
-                fontFamily: 'SF Compact',
-                fontWeight: FontWeight.w600,
-                fontSize: 26.sp,
-                height: 1.193,
-                color: AppColors.primaryText,
-              ),
+            child: Icon(
+              Icons.arrow_back,
+              size: 26.sp,
+              color: AppColors.primaryText,
             ),
           ),
           SizedBox(height: 12.h),
@@ -322,20 +317,10 @@ class _DocumentsListPageState extends State<DocumentsListPage> {
               ),
             ),
             SizedBox(width: 10.w),
-            SizedBox(
-              width: 9.28.w,
-              child: Center(
-                child: Text(
-                  '􀆊',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 19.72.sp,
-                    height: 1.294,
-                    color: const Color(0xFFA9B6B9),
-                  ),
-                ),
-              ),
+            Icon(
+              Icons.chevron_right,
+              color: const Color(0xFFA9B6B9),
+              size: 24.sp,
             ),
           ],
         ),

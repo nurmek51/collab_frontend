@@ -115,11 +115,6 @@ class _ActiveOrderStateState extends State<ActiveOrderState> {
                           errorBuilder: (context, error, stackTrace) =>
                               _buildDefaultLogo(),
                         )
-                      : widget.order.projectLogo != null
-                      ? Image.asset(
-                          'assets/images/project_logo-3e4cfa.png',
-                          fit: BoxFit.contain,
-                        )
                       : _buildDefaultLogo(),
                 ),
               ],
@@ -213,8 +208,8 @@ class _ActiveOrderStateState extends State<ActiveOrderState> {
     return _buildActionCard(
       icon: Image.asset(
         'assets/images/telegram_icon.png',
-        width: 35.w,
-        height: 35.h,
+        width: 24.w,
+        height: 24.h,
         fit: BoxFit.contain,
       ),
       title: 'Рабочий чат',
@@ -289,15 +284,10 @@ class _ActiveOrderStateState extends State<ActiveOrderState> {
         borderRadius: BorderRadius.circular(35.r),
       ),
       child: Center(
-        child: Text(
-          '􀉀',
-          style: TextStyle(
-            fontFamily: 'SF Compact Rounded',
-            fontWeight: FontWeight.w400,
-            fontSize: 16.sp,
-            height: 1.3,
-            color: AppColors.white,
-          ),
+        child: Icon(
+          Icons.description_outlined,
+          size: 18.sp,
+          color: AppColors.white,
         ),
       ),
     );

@@ -179,6 +179,7 @@ class _ClientOrderDetailsPageState extends State<ClientOrderDetailsPage> {
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 30.h),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             _buildHeader(),
