@@ -16,10 +16,12 @@ import '../../../../shared/api/clients_api.dart';
 import '../../../../shared/api/companies_api.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/api/auth_api.dart';
+import '../../../../shared/api/applications_api.dart';
 import '../../../../shared/api/client.dart';
 import '../../../../shared/models/company_option.dart';
 import '../../../../shared/widgets/company_dropdown_field.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
+import '../../../../features/orders/data/models/application_model.dart';
 import '../widgets/specialization_dialog.dart';
 
 class AdminOrdersPage extends StatefulWidget {
@@ -34,6 +36,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   late final AuthApi _authApi;
   late final AdminApi _adminApi;
   late final FreelancerApi _freelancerApi;
+  late final ApplicationsApi _applicationsApi;
   List<AdminProjectModel> _projects = const [];
   List<AdminProjectModel> _allProjects = const [];
   bool _isLoading = true;
@@ -47,6 +50,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   final Map<String, bool> _companiesLoading = {};
   final Map<String, String?> _selectedCompanyByOrder = {};
   final Map<String, AdminCompanyModel> _overrideCompanyByOrder = {};
+
+  // Applications state
+  final Map<String, List<ApplicationModel>> _ordersApplications = {};
+  final Map<String, bool> _applicationsLoading = {};
 
   // Editing state
   final Map<String, bool> _editingFields = {};
@@ -65,6 +72,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       clientsApi: sl<ClientsApi>(),
       companiesApi: sl<CompaniesApi>(),
     );
+    _applicationsApi = sl<ApplicationsApi>();
     _authApi = sl<AuthApi>();
     _adminApi = sl<AdminApi>();
     _freelancerApi = sl<FreelancerApi>();
@@ -177,6 +185,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       for (final project in filteredProjects) {
         _fetchCompaniesForClient(project.client.clientId);
       }
+
+      if (_projects.isNotEmpty) {
+        _fetchApplications(_projects[_selectedIndex].order.id);
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -202,6 +214,80 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
         _allProjects = const [];
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchApplications(String orderId) async {
+    if (_ordersApplications.containsKey(orderId) ||
+        (_applicationsLoading[orderId] ?? false)) {
+      return;
+    }
+
+    setState(() {
+      _applicationsLoading[orderId] = true;
+    });
+
+    try {
+      final applications = await _applicationsApi.getOrderApplications(orderId);
+      final pendingApplications = applications
+          .where((app) => app.status == ApplicationStatus.pending)
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _ordersApplications[orderId] = pendingApplications;
+          _applicationsLoading[orderId] = false;
+        });
+
+        // Fetch freelancer data for each application
+        for (final app in pendingApplications) {
+          _fetchFreelancerData(app.freelancerId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching applications: $e');
+      if (mounted) {
+        setState(() {
+          _applicationsLoading[orderId] = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleApplicationStatus(
+    ApplicationModel app,
+    ApplicationStatus status,
+  ) async {
+    try {
+      await _applicationsApi.updateApplicationStatus(
+        applicationId: app.id,
+        status: status,
+      );
+
+      if (!mounted) return;
+
+      // Refresh applications
+      setState(() {
+        _ordersApplications.remove(app.orderId);
+      });
+      _fetchApplications(app.orderId);
+
+      // If accepted, we might want to refresh the project to show the new participant?
+      // But maybe just updating status is enough for now.
+      // Actually if accepted, it should ideally update the order's specializations as well?
+      // The backend probably handles assigning the freelancer if accepted.
+      // So we should re-fetch the project too.
+      _loadProjects();
+    } catch (e) {
+      debugPrint('Error updating application status: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка обновления статуса: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -519,6 +605,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       _selectedIndex = index;
     });
     _fetchCompaniesForClient(_projects[index].client.clientId);
+    _fetchApplications(_projects[index].order.id);
   }
 
   void _toggleDescription(String orderId) {
@@ -1222,6 +1309,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                 ),
               ],
             ),
+            _buildApplicationsSection(order.id),
             const SizedBox(height: 32),
             Text(
               'Участники',
@@ -1853,6 +1941,55 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
             fontSize: 15,
             color: AppColors.adminPrimaryText,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApplicationsSection(String orderId) {
+    final applications = _ordersApplications[orderId];
+    final isLoading = _applicationsLoading[orderId] ?? false;
+
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (applications == null || applications.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 32),
+        Text(
+          'Заявки',
+          style: TextStyle(
+            fontFamily: 'Ubuntu',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: AppColors.adminPrimaryText,
+          ),
+        ),
+        const SizedBox(height: 20),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: applications.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final app = applications[index];
+            final freelancer = _appliedFreelancers[app.freelancerId];
+
+            return _OrderApplicationCard(
+              application: app,
+              freelancer: freelancer,
+              onAccept: () =>
+                  _handleApplicationStatus(app, ApplicationStatus.accepted),
+              onReject: () =>
+                  _handleApplicationStatus(app, ApplicationStatus.rejected),
+            );
+          },
         ),
       ],
     );
@@ -3286,5 +3423,237 @@ class _OccupiedSpecializationCard extends StatelessWidget {
   String _getSpecializationDisplayName(String key) {
     // Use centralized specialization mappings
     return SpecializationConstants.getDisplayNameFromKey(key);
+  }
+}
+
+class _OrderApplicationCard extends StatelessWidget {
+  final ApplicationModel application;
+  final FreelancerModel? freelancer;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  const _OrderApplicationCard({
+    required this.application,
+    this.freelancer,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (freelancer == null) {
+      return Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFCADDE1)),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFCADDE1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[200],
+                ),
+                child: ClipOval(
+                  child:
+                      freelancer!.avatarUrl != null &&
+                          freelancer!.avatarUrl!.isNotEmpty
+                      ? Image.network(
+                          freelancer!.avatarUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildAvatarFallback(freelancer!.name),
+                        )
+                      : _buildAvatarFallback(freelancer!.name),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      freelancer!.fullName,
+                      style: const TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        color: Color(0xFF353F49),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      freelancer!.specializationWithLevel,
+                      style: const TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontSize: 14,
+                        color: Color(0xFF96A4B3),
+                      ),
+                    ),
+                    if (application.specializationName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Text(
+                          'Заявка на позицию: ${application.specializationName}',
+                          style: const TextStyle(
+                            fontFamily: 'Ubuntu',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF517499),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              SizedBox(
+                width: 140,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton(
+                      onPressed: onAccept,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF51B24F),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text('Принять'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: onReject,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFE53935),
+                        side: const BorderSide(color: Color(0xFFE53935)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text('Отказать'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (freelancer!.bio != null && freelancer!.bio!.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text(
+              'О себе',
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Color(0xFF353F49),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              freelancer!.bio!,
+              style: const TextStyle(
+                fontFamily: 'Ubuntu',
+                fontSize: 14,
+                height: 1.5,
+                color: Color(0xFF5D6B78),
+              ),
+            ),
+          ],
+          if (freelancer!.phoneNumber.isNotEmpty ||
+              freelancer!.email.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                if (freelancer!.phoneNumber.isNotEmpty) ...[
+                  const Icon(
+                    Icons.phone_outlined,
+                    size: 16,
+                    color: Color(0xFF96A4B3),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    freelancer!.phoneNumber,
+                    style: const TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontSize: 14,
+                      color: Color(0xFF5D6B78),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                ],
+                if (freelancer!.email.isNotEmpty) ...[
+                  const Icon(
+                    Icons.email_outlined,
+                    size: 16,
+                    color: Color(0xFF96A4B3),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    freelancer!.email,
+                    style: const TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontSize: 14,
+                      color: Color(0xFF5D6B78),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarFallback(String name) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFD9D9D9),
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+          style: const TextStyle(
+            fontFamily: 'Ubuntu',
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            color: Color(0xFF96A4B3),
+          ),
+        ),
+      ),
+    );
   }
 }
