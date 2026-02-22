@@ -55,7 +55,8 @@ class _FeedPageState extends State<FeedPage> with FreelancerPageMixin {
           .where(
             (app) =>
                 app.status == ApplicationStatus.pending ||
-                app.status == ApplicationStatus.accepted,
+                app.status == ApplicationStatus.accepted ||
+                app.status == ApplicationStatus.rejected,
           )
           .map((app) => app.orderId)
           .toSet();

@@ -44,6 +44,9 @@ class _OrderFeedCardState extends State<OrderFeedCard> {
       final companyData = await _companiesApi.getCompanyById(
         widget.orderFeed.companyId,
       );
+
+      if (!mounted) return;
+
       setState(() {
         if (companyData != null) {
           _companyLogo = _extractStringValue(companyData['company_logo']);
@@ -52,9 +55,11 @@ class _OrderFeedCardState extends State<OrderFeedCard> {
         _isLoadingCompany = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoadingCompany = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingCompany = false;
+        });
+      }
     }
   }
 
