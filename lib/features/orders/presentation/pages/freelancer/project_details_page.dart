@@ -74,15 +74,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(color: AppColors.backgroundColor),
-        child: SafeArea(
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : error != null
-              ? _buildErrorState()
-              : _buildContent(),
-        ),
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+            ? _buildErrorState()
+            : _buildContent(),
       ),
     );
   }
@@ -315,11 +313,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildRegularContent() {
     return Container(
-      width: 394.w,
+      width: double.infinity,
       child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 30.h),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header
               _buildHeader(),
@@ -358,11 +357,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildAcceptedFreelancerContent() {
     return Container(
-      width: 394.w,
+      width: double.infinity,
       child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 30.h),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Use regular header
               _buildHeader(),
@@ -400,7 +400,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildHeader() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -413,20 +413,23 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             ),
           ),
           SizedBox(height: 12.h),
-          Text(
-            selectedSpecializationOffer != null
-                ? SpecializationConstants.getDisplayNameFromKey(
-                    selectedSpecializationOffer!.specialization,
-                  )
-                : orderDetails?.orderTitle ?? 'Проект',
-            style: TextStyle(
-              fontFamily: 'Ubuntu',
-              fontWeight: FontWeight.w700,
-              fontSize: 26.sp,
-              height: 1.149,
-              color: AppColors.primaryText,
+          Container(
+            width: double.infinity,
+            child: Text(
+              selectedSpecializationOffer != null
+                  ? SpecializationConstants.getDisplayNameFromKey(
+                      selectedSpecializationOffer!.specialization,
+                    )
+                  : orderDetails?.orderTitle ?? 'Проект',
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w700,
+                fontSize: 26.sp,
+                height: 1.149,
+                color: AppColors.primaryText,
+              ),
+              textAlign: TextAlign.start,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -435,7 +438,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildTaskSection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -498,7 +501,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildClientSection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -578,7 +581,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildConditionsSection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -643,7 +646,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildRequirementsSection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -759,74 +762,77 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   Widget _buildBottomActions() {
-    return Column(
-      children: [
-        // Main action button - only show if not from my work
-        if (!widget.fromMyWork)
-          SizedBox(
-            width: 354.w,
-            child: AnimatedPrimaryButton(
-              text: 'Откликнуться',
-              onPressed: () => _handleRespond(),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        children: [
+          // Main action button - only show if not from my work
+          if (!widget.fromMyWork)
+            SizedBox(
+              width: double.infinity,
+              child: AnimatedPrimaryButton(
+                text: 'Откликнуться',
+                onPressed: () => _handleRespond(),
+              ),
             ),
-          ),
 
-        if (!widget.fromMyWork) SizedBox(height: 26.h),
+          if (!widget.fromMyWork) SizedBox(height: 26.h),
 
-        // TODO: Hide secondary actions until implementation
-        // Secondary actions
-        // Column(
-        //   children: [
-        //     // TODO: Hide «Share vacancy» button - Conditional render: if (canShare) show where canShare false in spec
-        //     GestureDetector(
-        //       onTap: () {
-        //         // TODO: Implement share functionality
-        //         ScaffoldMessenger.of(context).showSnackBar(
-        //           const SnackBar(
-        //             content: Text('Функция публикации в разработке'),
-        //           ),
-        //         );
-        //       },
-        //       child: Text(
-        //         'Поделиться вакансией',
-        //         style: TextStyle(
-        //           fontFamily: 'Ubuntu',
-        //           fontWeight: FontWeight.w400,
-        //           fontSize: 16.sp,
-        //           height: 1.3,
-        //           color: AppColors.blueAccent,
-        //         ),
-        //         textAlign: TextAlign.center,
-        //       ),
-        //     ),
+          // TODO: Hide secondary actions until implementation
+          // Secondary actions
+          // Column(
+          //   children: [
+          //     // TODO: Hide «Share vacancy» button - Conditional render: if (canShare) show where canShare false in spec
+          //     GestureDetector(
+          //       onTap: () {
+          //         // TODO: Implement share functionality
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           const SnackBar(
+          //             content: Text('Функция публикации в разработке'),
+          //           ),
+          //         );
+          //       },
+          //       child: Text(
+          //         'Поделиться вакансией',
+          //         style: TextStyle(
+          //           fontFamily: 'Ubuntu',
+          //           fontWeight: FontWeight.w400,
+          //           fontSize: 16.sp,
+          //           height: 1.3,
+          //           color: AppColors.blueAccent,
+          //         ),
+          //         textAlign: TextAlign.center,
+          //       ),
+          //     ),
 
-        //     SizedBox(height: 26.h),
+          //     SizedBox(height: 26.h),
 
-        //     // TODO: Hide «Уточнить детали» button - Remove or hide
-        //     GestureDetector(
-        //       onTap: () {
-        //         // TODO: Implement clarify details functionality
-        //         ScaffoldMessenger.of(context).showSnackBar(
-        //           const SnackBar(
-        //             content: Text('Функция уточнения деталей в разработке'),
-        //           ),
-        //         );
-        //       },
-        //       child: Text(
-        //         'Уточнить детали',
-        //         style: TextStyle(
-        //           fontFamily: 'Ubuntu',
-        //           fontWeight: FontWeight.w400,
-        //           fontSize: 16.sp,
-        //           height: 1.3,
-        //           color: AppColors.blueAccent,
-        //         ),
-        //         textAlign: TextAlign.center,
-        //       ),
-        //     ),
-        //   ],
-        // ),
-      ],
+          //     // TODO: Hide «Уточнить детали» button - Remove or hide
+          //     GestureDetector(
+          //       onTap: () {
+          //         // TODO: Implement clarify details functionality
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           const SnackBar(
+          //             content: Text('Функция уточнения деталей в разработке'),
+          //           ),
+          //         );
+          //       },
+          //       child: Text(
+          //         'Уточнить детали',
+          //         style: TextStyle(
+          //           fontFamily: 'Ubuntu',
+          //           fontWeight: FontWeight.w400,
+          //           fontSize: 16.sp,
+          //           height: 1.3,
+          //           color: AppColors.blueAccent,
+          //         ),
+          //         textAlign: TextAlign.center,
+          //       ),
+          //     ),
+          //   ],
+          // ),
+        ],
+      ),
     );
   }
 
@@ -963,7 +969,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       maxLines: 8,
       textDirection: TextDirection.ltr,
     );
-    textPainter.layout(maxWidth: 354.w);
+    textPainter.layout(maxWidth: 1.sw - 40.w);
     return textPainter.didExceedMaxLines;
   }
 
@@ -1027,7 +1033,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildAcceptedSalarySection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1071,7 +1077,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   Widget _buildAcceptedTeamSection() {
     return Container(
-      width: 354.w,
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1206,56 +1212,59 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   Widget _buildAcceptedBottomActions() {
-    return Column(
-      children: [
-        Container(
-          width: 354.w,
-          child: AnimatedPrimaryButton(
-            onPressed: () async {
-              // Deep link implementation similar to client order details page
-              final chatLink = orderDetails?.chatLink;
-              if (chatLink != null && chatLink.isNotEmpty) {
-                final success = await DeepLinkUtils.openDeepLink(chatLink);
-                if (!success) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            child: AnimatedPrimaryButton(
+              onPressed: () async {
+                // Deep link implementation similar to client order details page
+                final chatLink = orderDetails?.chatLink;
+                if (chatLink != null && chatLink.isNotEmpty) {
+                  final success = await DeepLinkUtils.openDeepLink(chatLink);
+                  if (!success) {
+                    if (mounted) {
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text(
+                      //       'Не удалось открыть чат. Попробуйте позже.',
+                      //     ),
+                      //     backgroundColor: Colors.orange,
+                      //   ),
+                      // );
+                    }
+                  }
+                } else {
                   if (mounted) {
                     // ScaffoldMessenger.of(context).showSnackBar(
                     //   const SnackBar(
-                    //     content: Text(
-                    //       'Не удалось открыть чат. Попробуйте позже.',
-                    //     ),
+                    //     content: Text('Ссылка на чат недоступна.'),
                     //     backgroundColor: Colors.orange,
                     //   ),
                     // );
                   }
                 }
-              } else {
-                if (mounted) {
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(
-                  //     content: Text('Ссылка на чат недоступна.'),
-                  //     backgroundColor: Colors.orange,
-                  //   ),
-                  // );
-                }
-              }
-            },
-            text: 'Рабочий чат',
+              },
+              text: 'Рабочий чат',
+            ),
           ),
-        ),
-        SizedBox(height: 26.h),
+          SizedBox(height: 26.h),
 
-        // TODO: Hide «Поддержка collab» - Remove button on this page
-        // Text(
-        //   'Поддержка Collab',
-        //   style: TextStyle(
-        //     fontFamily: 'Ubuntu',
-        //     fontWeight: FontWeight.w400,
-        //     fontSize: 16.sp,
-        //     height: 1.3,
-        //     color: const Color(0xFF2782E3),
-        //   ),
-        // ),
-      ],
+          // TODO: Hide «Поддержка collab» - Remove button on this page
+          // Text(
+          //   'Поддержка Collab',
+          //   style: TextStyle(
+          //     fontFamily: 'Ubuntu',
+          //     fontWeight: FontWeight.w400,
+          //     fontSize: 16.sp,
+          //     height: 1.3,
+          //     color: const Color(0xFF2782E3),
+          //   ),
+          // ),
+        ],
+      ),
     );
   }
 }

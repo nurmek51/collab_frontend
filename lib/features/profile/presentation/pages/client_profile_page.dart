@@ -33,6 +33,9 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   bool _isLoading = true;
   bool _isSaving = false;
 
+  // Store company ID and last order to update company position
+  String _lastCompanyId = '';
+
   late final UpdateClientProfile _updateClientProfileUseCase;
   late final ApiService _apiService;
   // Note: GetClientProfile use case is not required because we call /clients/profile directly
@@ -102,6 +105,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         }
 
         if (companyId != null && companyId.isNotEmpty) {
+          _lastCompanyId = companyId; // Store for later update
           try {
             final companiesApi = sl<CompaniesApi>();
             final companyResponse = await companiesApi.getCompanyById(
@@ -115,10 +119,8 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
               if (maybeName is String && maybeName.trim().isNotEmpty)
                 companyName = maybeName.trim();
 
-              final maybePos =
-                  companyResponse['client_position'] ??
-                  companyResponse['client_position_name'] ??
-                  companyResponse['clientPosition'];
+              // Extract client_position directly from company object
+              final maybePos = companyResponse['client_position'];
               if (maybePos is String && maybePos.trim().isNotEmpty)
                 clientPosition = maybePos.trim();
             }
@@ -226,11 +228,27 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
           : fullName.split(RegExp(r'\s+'));
       final name = parts.isNotEmpty ? parts.first : '';
       final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
       await _updateClientProfileUseCase(
         name: name,
         surname: surname,
         phoneNumber: _phoneController.text.trim(),
       );
+
+      // Update company position if company ID is available
+      if (_lastCompanyId.isNotEmpty &&
+          _positionController.text.trim().isNotEmpty) {
+        try {
+          final companiesApi = sl<CompaniesApi>();
+          await companiesApi.updateCompany(
+            _lastCompanyId,
+            clientPosition: _positionController.text.trim(),
+          );
+        } catch (e) {
+          // Log error but don't fail the entire save operation
+          debugPrint('Error updating company position: $e');
+        }
+      }
 
       if (mounted) {
         // ScaffoldMessenger.of(context).showSnackBar(
@@ -424,23 +442,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                             _buildInputField(
                               label: 'Должность',
                               controller: _positionController,
-                              readOnly: true,
-                              onTap: () {
-                                // If position is empty, inform user they must create an order first
-                                if (_positionController.text.trim().isEmpty) {
-                                  HapticFeedback.heavyImpact();
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   const SnackBar(
-                                  //     content: Text(
-                                  //       'Сначала создайте заказ, затем вы сможете редактировать профиль.',
-                                  //     ),
-                                  //     backgroundColor: Colors.orange,
-                                  //   ),
-                                  // );
-                                }
-                              },
                               validator: (value) {
-                                // position is read-only
                                 return null;
                               },
                             ),
