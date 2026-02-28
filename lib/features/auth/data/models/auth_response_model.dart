@@ -3,25 +3,29 @@ class AuthResponseModel {
   final String accessToken;
   final String refreshToken;
   final int expiresIn;
-  final String userId;
+  final String? userId;
   final String? currentRole;
 
   const AuthResponseModel({
     required this.accessToken,
     required this.refreshToken,
     required this.expiresIn,
-    required this.userId,
+    this.userId,
     this.currentRole,
   });
 
   /// Create from JSON response
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
+    final payload = json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : json;
+
     return AuthResponseModel(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
-      expiresIn: json['expires_in'] as int,
-      userId: json['user_id'] as String,
-      currentRole: json['current_role'] as String?,
+      accessToken: payload['access_token'] as String,
+      refreshToken: payload['refresh_token'] as String,
+      expiresIn: payload['expires_in'] as int,
+      userId: payload['user_id'] as String?,
+      currentRole: payload['current_role'] as String?,
     );
   }
 
@@ -31,7 +35,7 @@ class AuthResponseModel {
       'access_token': accessToken,
       'refresh_token': refreshToken,
       'expires_in': expiresIn,
-      'user_id': userId,
+      if (userId != null) 'user_id': userId,
       if (currentRole != null) 'current_role': currentRole,
     };
   }
@@ -43,10 +47,7 @@ class AuthResponseModel {
 
   /// Check if this auth response is valid
   bool get isValid {
-    return accessToken.isNotEmpty &&
-        refreshToken.isNotEmpty &&
-        expiresIn > 0 &&
-        userId.isNotEmpty;
+    return accessToken.isNotEmpty && refreshToken.isNotEmpty && expiresIn > 0;
   }
 
   @override

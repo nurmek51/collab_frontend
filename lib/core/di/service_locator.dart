@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import '../../core/config/app_config.dart';
 
 // Core services
 import '../../core/services/api_service.dart';
@@ -47,7 +48,7 @@ Future<void> initializeDependencies() async {
   // Dio client
   sl.registerLazySingleton<Dio>(() {
     final dio = Dio();
-    dio.options.baseUrl = 'https://api.collab-app.com';
+    dio.options.baseUrl = AppConfig.baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 30);
     dio.options.receiveTimeout = const Duration(seconds: 30);
     return dio;

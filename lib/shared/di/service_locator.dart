@@ -21,6 +21,7 @@ import '../storage/secure_storage_service.dart';
 import '../storage/preferences_service.dart';
 import '../network/dio_client.dart';
 import '../../core/services/api_service.dart';
+import '../../core/config/app_config.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -43,7 +44,7 @@ Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton<Dio>(() {
     final dio = Dio();
-    dio.options.baseUrl = 'https://api.collab-app.com';
+    dio.options.baseUrl = AppConfig.baseUrl;
     dio.options.connectTimeout = const Duration(seconds: 30);
     dio.options.receiveTimeout = const Duration(seconds: 30);
     return dio;

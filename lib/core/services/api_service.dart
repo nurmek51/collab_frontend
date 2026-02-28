@@ -41,7 +41,7 @@ class ApiService {
     String? role,
   }) async {
     try {
-      final data = {'phone': phoneNumber};
+      final data = {'phone_number': phoneNumber};
       if (role != null) {
         data['role'] = role;
       }
@@ -58,7 +58,7 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/auth/verify-otp',
-        data: {'phone': phoneNumber, 'otp': otp},
+        data: {'phone_number': phoneNumber, 'code': otp},
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -70,10 +70,10 @@ class ApiService {
         if (tokenData.containsKey('access_token')) {
           await _tokenManager.setTokens(
             accessToken: tokenData['access_token'] as String,
-            refreshToken: '', // No refresh token from API
+            refreshToken: tokenData['refresh_token'] as String,
             expiresIn: tokenData['expires_in'] as int? ?? 86400,
-            userId: '', // Will be extracted from JWT if needed
-            currentRole: null,
+            userId: tokenData['user_id'] as String? ?? '',
+            currentRole: tokenData['current_role'] as String?,
           );
 
           _backgroundRefresh.startOnLogin();
@@ -89,7 +89,7 @@ class ApiService {
   Future<Map<String, dynamic>> switchRole(String role) async {
     return await _tokenManager.makeAuthenticatedRequest(() async {
       final response = await _dio.post(
-        '/auth/switch-role',
+        '/auth/select-role',
         data: {'role': role},
       );
 

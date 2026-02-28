@@ -37,8 +37,36 @@ class AuthApi {
     if (response['access_token'] != null) {
       await _authStore.setTokens(
         accessToken: response['access_token'] as String,
+        refreshToken: response['refresh_token'] as String,
         tokenType: response['token_type'] as String? ?? 'bearer',
         expiresIn: response['expires_in'] as int? ?? 86400,
+        refreshExpiresIn: response['refresh_expires_in'] as int?,
+      );
+    }
+
+    return response;
+  }
+
+  /// Refresh access and refresh tokens
+  Future<Map<String, dynamic>> refreshToken() async {
+    final refreshToken = await _authStore.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw Exception('No refresh token available');
+    }
+
+    final response = await _client.post<Map<String, dynamic>>(
+      '/auth/refresh',
+      data: {'refresh_token': refreshToken},
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+
+    if (response['access_token'] != null && response['refresh_token'] != null) {
+      await _authStore.setTokens(
+        accessToken: response['access_token'] as String,
+        refreshToken: response['refresh_token'] as String,
+        tokenType: response['token_type'] as String? ?? 'bearer',
+        expiresIn: response['expires_in'] as int? ?? 86400,
+        refreshExpiresIn: response['refresh_expires_in'] as int?,
       );
     }
 

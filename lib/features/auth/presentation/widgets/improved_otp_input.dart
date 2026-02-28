@@ -195,67 +195,73 @@ class _ImprovedOtpInputState extends State<ImprovedOtpInput> {
       builder: (context, constraints) {
         // Calculate responsive field size
         final availableWidth = constraints.maxWidth;
+        final spacing = widget.length > 4 ? 6.w : 20.84.w;
         final fieldWidth =
-            (availableWidth - ((widget.length - 1) * 20.84.w)) / widget.length;
-        final fieldHeight = (fieldWidth * 67.16) / 72.4;
+            (availableWidth - ((widget.length - 1) * spacing)) / widget.length;
+        final fieldHeight = (fieldWidth * 70.16) / 70.4;
+        final borderRadius = (fieldWidth * 0.22).clamp(10.0, 16.79);
 
         return SizedBox(
           width: availableWidth,
           height: fieldHeight,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(widget.length, (index) {
-              return SizedBox(
-                width: fieldWidth,
-                height: fieldHeight,
-                child: KeyboardListener(
-                  focusNode: FocusNode(),
-                  onKeyEvent: (event) => _handleKeyDown(event, index),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(16.79.r),
-                      border: Border.all(
-                        color: widget.isVerifying
-                            ? Colors.grey[400]!
-                            : const Color(0xFFCADDE1),
-                        width: 1.05,
-                      ),
-                    ),
-                    child: Center(
-                      child: TextFormField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        enabled: !widget.isVerifying,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        maxLength: 1,
-                        style: TextStyle(
-                          fontFamily: 'Ubuntu',
-                          fontWeight: FontWeight.w600,
-                          fontSize: (fieldWidth * 0.33).clamp(16, 24),
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == widget.length - 1 ? 0 : spacing,
+                ),
+                child: SizedBox(
+                  width: fieldWidth,
+                  height: fieldHeight,
+                  child: KeyboardListener(
+                    focusNode: FocusNode(),
+                    onKeyEvent: (event) => _handleKeyDown(event, index),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(borderRadius.r),
+                        border: Border.all(
                           color: widget.isVerifying
-                              ? Colors.grey[600]
-                              : AppColors.black,
+                              ? Colors.grey[400]!
+                              : const Color(0xFFCADDE1),
+                          width: 1.05,
                         ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          counterText: '',
-                          contentPadding: EdgeInsets.zero,
+                      ),
+                      child: Center(
+                        child: TextFormField(
+                          controller: _controllers[index],
+                          focusNode: _focusNodes[index],
+                          enabled: !widget.isVerifying,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          maxLength: 1,
+                          style: TextStyle(
+                            fontFamily: 'Ubuntu',
+                            fontWeight: FontWeight.w600,
+                            fontSize: (fieldWidth * 0.33).clamp(16, 24),
+                            color: widget.isVerifying
+                                ? Colors.grey[600]
+                                : AppColors.black,
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            counterText: '',
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10), // Allow paste
+                          ],
+                          onTap: () {
+                            // Clear the field when tapped if not verifying
+                            if (!widget.isVerifying) {
+                              _controllers[index].clear();
+                              _values[index] = '';
+                              _notifyChange();
+                            }
+                            // During verification, fields are disabled so this won't be called
+                          },
                         ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10), // Allow paste
-                        ],
-                        onTap: () {
-                          // Clear the field when tapped if not verifying
-                          if (!widget.isVerifying) {
-                            _controllers[index].clear();
-                            _values[index] = '';
-                            _notifyChange();
-                          }
-                          // During verification, fields are disabled so this won't be called
-                        },
                       ),
                     ),
                   ),

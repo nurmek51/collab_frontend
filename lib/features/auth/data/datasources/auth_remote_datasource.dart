@@ -6,7 +6,11 @@ abstract class AuthRemoteDataSource {
   Future<void> sendOtp(String phoneNumber, {String? role});
 
   /// Verify OTP and get authentication data
-  Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String otp);
+  Future<Map<String, dynamic>> verifyOtp(
+    String phoneNumber,
+    String code, {
+    String? firebaseToken,
+  });
 
   /// Switch user role
   Future<void> switchRole(String role);
@@ -31,12 +35,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> sendOtp(String phoneNumber, {String? role}) async {
     final data = {'phone_number': phoneNumber, if (role != null) 'role': role};
 
-    await _dioClient.post('/auth/send-otp', data: data);
+    await _dioClient.post('/auth/request-otp', data: data);
   }
 
   @override
-  Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String otp) async {
-    final data = {'phone_number': phoneNumber, 'otp': otp};
+  Future<Map<String, dynamic>> verifyOtp(
+    String phoneNumber,
+    String code, {
+    String? firebaseToken,
+  }) async {
+    final data = {
+      'phone_number': phoneNumber,
+      'code': code,
+      if (firebaseToken != null) 'firebase_token': firebaseToken,
+    };
 
     final response = await _dioClient.post('/auth/verify-otp', data: data);
     return response.data as Map<String, dynamic>;
@@ -45,7 +57,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> switchRole(String role) async {
     final data = {'role': role};
-    await _dioClient.post('/auth/switch-role', data: data);
+    await _dioClient.post('/auth/select-role', data: data);
   }
 
   @override

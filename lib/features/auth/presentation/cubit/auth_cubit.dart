@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'auth_state.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/entities/auth_response.dart';
 import '../../../../core/services/background_refresh_manager.dart';
 
 /// Authentication Cubit with auto-refresh integration
@@ -68,6 +67,12 @@ class AuthCubit extends Cubit<AuthState> {
       final authResponse = await _authRepository.verifyOtp(phoneNumber, otp);
 
       if (authResponse.isValid) {
+        final resolvedUserId = authResponse.userId;
+        if (resolvedUserId == null || resolvedUserId.isEmpty) {
+          emit(const AuthError('User identifier not found after login'));
+          return;
+        }
+
         // Background refresh is automatically started by the ApiService
         // when tokens are saved during verifyOtp
 
@@ -75,12 +80,12 @@ class AuthCubit extends Cubit<AuthState> {
             authResponse.currentRole!.isNotEmpty) {
           emit(
             AuthAuthenticated(
-              userId: authResponse.userId,
+              userId: resolvedUserId,
               currentRole: authResponse.currentRole,
             ),
           );
         } else {
-          emit(AuthRoleSelectionRequired(authResponse.userId));
+          emit(AuthRoleSelectionRequired(resolvedUserId));
         }
       } else {
         emit(const AuthError('Invalid authentication response'));

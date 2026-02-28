@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import '../state/auth.dart';
 import '../../core/config/app_config.dart';
@@ -40,23 +42,30 @@ class ApiException implements Exception {
 class ApiClient {
   static String get baseUrl => AppConfig.baseUrl;
 
-  late final Dio _dio;
+  final Dio _dio;
   final AuthStore _authStore;
+  Future<bool>? _pendingRefresh;
 
-  ApiClient(this._authStore) {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 10),
-        headers: {'Content-Type': 'application/json'},
-      ),
-    );
-
+  ApiClient(this._authStore, {Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: baseUrl,
+              connectTimeout: const Duration(seconds: 30),
+              receiveTimeout: const Duration(seconds: 10),
+              headers: {'Content-Type': 'application/json'},
+            ),
+          ) {
     // Add auth interceptor
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (options.extra['skipAuth'] == true) {
+            handler.next(options);
+            return;
+          }
+
           final token = await _authStore.getAccessToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -64,10 +73,33 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          // Handle 401 errors by clearing tokens
-          if (error.response?.statusCode == 401) {
-            await _authStore.clearTokens();
+          final shouldHandleRefresh =
+              error.response?.statusCode == 401 &&
+              error.requestOptions.extra['retryAfterRefresh'] != true &&
+              error.requestOptions.extra['skipAuthRefresh'] != true;
+
+          if (shouldHandleRefresh) {
+            final refreshed = await _refreshSession();
+            if (refreshed) {
+              final accessToken = await _authStore.getAccessToken();
+              if (accessToken != null && accessToken.isNotEmpty) {
+                final retryOptions = error.requestOptions;
+                retryOptions.headers['Authorization'] = 'Bearer $accessToken';
+                retryOptions.extra['retryAfterRefresh'] = true;
+
+                try {
+                  final retryResponse = await _dio.fetch(retryOptions);
+                  handler.resolve(retryResponse);
+                  return;
+                } catch (_) {
+                  await _authStore.clearTokens();
+                }
+              }
+            } else {
+              await _authStore.clearTokens();
+            }
           }
+
           handler.next(error);
         },
       ),
@@ -201,6 +233,69 @@ class ApiClient {
         return const ApiException(
           message: 'An unexpected error occurred. Please try again.',
         );
+    }
+  }
+
+  Future<bool> _refreshSession() async {
+    if (_pendingRefresh != null) {
+      return _pendingRefresh!;
+    }
+
+    final completer = Completer<bool>();
+    _pendingRefresh = completer.future;
+
+    try {
+      final refreshToken = await _authStore.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        completer.complete(false);
+        return false;
+      }
+
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+        options: Options(
+          extra: {'skipAuth': true, 'skipAuthRefresh': true},
+          headers: {'Authorization': null},
+        ),
+      );
+
+      final body = response.data as Map<String, dynamic>;
+      final success = body['success'] == true;
+      final data = body['data'] as Map<String, dynamic>?;
+
+      if (!success || data == null) {
+        completer.complete(false);
+        return false;
+      }
+
+      final newAccessToken = data['access_token'] as String?;
+      final newRefreshToken = data['refresh_token'] as String?;
+
+      if (newAccessToken == null || newRefreshToken == null) {
+        completer.complete(false);
+        return false;
+      }
+
+      final previousState = await _authStore.getAuthState();
+
+      await _authStore.setTokens(
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        tokenType: data['token_type'] as String? ?? 'bearer',
+        expiresIn: data['expires_in'] as int? ?? 86400,
+        refreshExpiresIn: data['refresh_expires_in'] as int?,
+        role: previousState.role,
+        userId: previousState.userId,
+      );
+
+      completer.complete(true);
+      return true;
+    } catch (_) {
+      completer.complete(false);
+      return false;
+    } finally {
+      _pendingRefresh = null;
     }
   }
 }

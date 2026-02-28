@@ -3,14 +3,14 @@ class AuthResponse {
   final String accessToken;
   final String refreshToken;
   final int expiresIn;
-  final String userId;
+  final String? userId;
   final String? currentRole;
 
   const AuthResponse({
     required this.accessToken,
     required this.refreshToken,
     required this.expiresIn,
-    required this.userId,
+    this.userId,
     this.currentRole,
   });
 
@@ -21,10 +21,7 @@ class AuthResponse {
 
   /// Check if this auth response is valid
   bool get isValid {
-    return accessToken.isNotEmpty &&
-        refreshToken.isNotEmpty &&
-        expiresIn > 0 &&
-        userId.isNotEmpty;
+    return accessToken.isNotEmpty && refreshToken.isNotEmpty && expiresIn > 0;
   }
 
   @override

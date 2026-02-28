@@ -1,0 +1,20 @@
+[Unit]
+Description=Collab Web Docker Deployment
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=__APP_DIR__
+ExecStart=/usr/bin/env bash -lc 'cd __APP_DIR__ && bash scripts/web_deploy.sh'
+ExecStop=/usr/bin/env bash -lc 'cd __APP_DIR__ && docker compose -f docker-compose.web.yml --env-file .env down'
+RemainAfterExit=true
+User=__APP_USER__
+Group=__APP_GROUP__
+TimeoutStartSec=900
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

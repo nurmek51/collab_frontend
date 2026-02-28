@@ -31,6 +31,7 @@ class _OtpPageState extends State<OtpPage> {
 
   String _otpCode = '';
   String? _phoneNumber;
+  String? _selectedRole;
   bool _isLoading = false;
   bool _isVerifying = false;
   bool _hasAutoSubmitted = false; // Track if we've already auto-submitted once
@@ -55,9 +56,31 @@ class _OtpPageState extends State<OtpPage> {
     // Load phone number and role from storage or navigation
     _phoneNumber =
         widget.phoneNumber ?? await _onboardingStore.loadPhoneNumber();
+    _selectedRole = widget.selectedRole ?? await _onboardingStore.loadRole();
 
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  Future<void> _applyRoleAfterVerification() async {
+    final selectedRole = _selectedRole;
+    if (selectedRole == null || selectedRole.isEmpty) return;
+
+    try {
+      await _authApi.selectRole(selectedRole);
+      return;
+    } catch (_) {
+      const fallbackRoles = ['freelancer', 'client'];
+      for (final role in fallbackRoles) {
+        try {
+          await _authApi.selectRole(role);
+        } catch (_) {}
+      }
+
+      try {
+        await _authApi.selectRole(selectedRole);
+      } catch (_) {}
     }
   }
 
@@ -120,6 +143,7 @@ class _OtpPageState extends State<OtpPage> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: 354.w, maxHeight: 68.h),
                   child: ImprovedOtpInput(
+                    length: 6,
                     onCompleted: _handleOtpCompleted,
                     onChanged: (otp) {
                       setState(() {
@@ -370,7 +394,7 @@ class _OtpPageState extends State<OtpPage> {
       setState(() {
         _errorMessage =
             _otpValidation.errorMessage ??
-            'Please enter the complete 4-digit code';
+            'Please enter the complete 6-digit code';
       });
       return;
     }
@@ -391,6 +415,9 @@ class _OtpPageState extends State<OtpPage> {
     try {
       // Call API to verify OTP and get tokens
       await _authApi.verifyOtp(phoneNumber: _phoneNumber!, code: _otpCode);
+
+      // Ensure selected role is applied immediately after successful OTP verification
+      await _applyRoleAfterVerification();
 
       if (mounted) {
         // Navigate to role selection page

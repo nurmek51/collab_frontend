@@ -1,0 +1,19 @@
+services:
+  collab-web:
+    container_name: collab-web
+    image: ${WEB_IMAGE:-collab-web:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      target: runtime
+      args:
+        DEBUG: ${DEBUG:-false}
+        BASE_URL: ${BASE_URL:-https://collab-api-810993564533.europe-north2.run.app/}
+        FLUTTER_BUILD_MODE: ${FLUTTER_BUILD_MODE:-release}
+      cache_from:
+        - type=local,src=.docker-cache
+      cache_to:
+        - type=local,dest=.docker-cache,mode=max
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped

@@ -1,0 +1,10 @@
+services:
+  collab-web:
+    container_name: collab-web
+    image: ${WEB_IMAGE:-collab-web:runtime}
+    build:
+      context: .
+      dockerfile: Dockerfile.web.runtime
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped

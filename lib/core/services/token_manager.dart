@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import '../../../shared/state/auth.dart';
+import '../config/app_config.dart';
 
 /// Enhanced token manager with automatic refresh capabilities
 /// Following the guide's specifications for seamless authentication
@@ -26,6 +27,14 @@ class TokenManager {
 
   // Use AuthStore for token storage
   final AuthStore _authStore = AuthStore();
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: AppConfig.baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
 
   /// Save authentication data after successful authentication
   Future<void> setTokens({
@@ -39,6 +48,7 @@ class TokenManager {
       // Use AuthStore for token storage
       await _authStore.setTokens(
         accessToken: accessToken,
+        refreshToken: refreshToken,
         tokenType: 'Bearer',
         expiresIn: expiresIn,
         userId: userId,
@@ -74,8 +84,7 @@ class TokenManager {
   /// Get stored refresh token
   Future<String?> get refreshToken async {
     try {
-      // AuthStore doesn't store refresh tokens, return null
-      return null;
+      return await _authStore.getRefreshToken();
     } catch (e) {
       print('Error getting refresh token: $e');
       return null;
@@ -224,25 +233,53 @@ class TokenManager {
         return false;
       }
 
-      // Since we don't have refresh tokens, we'll just check if the current token is still valid
-      final isExpired = await isTokenExpired();
-      if (!isExpired) {
-        _logTokenEvent('token_refresh_skipped', {
-          'reason': 'token_still_valid',
-        });
-        _processQueue(null, await accessToken);
-        return true;
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refresh_token': currentRefreshToken},
+        options: Options(headers: {'Authorization': null}),
+      );
+
+      if (response.data is! Map<String, dynamic>) {
+        _processQueue(Exception('Invalid refresh response format'), null);
+        return false;
       }
 
-      // If token is expired and no refresh token, fail gracefully
-      _logTokenEvent('token_refresh_failed', {
-        'reason': 'token_expired_no_refresh',
-      });
-      _processQueue(
-        Exception('Token expired and no refresh token available'),
-        null,
+      final payload = response.data as Map<String, dynamic>;
+      if (payload['success'] != true ||
+          payload['data'] is! Map<String, dynamic>) {
+        _processQueue(Exception('Refresh token request failed'), null);
+        return false;
+      }
+
+      final tokenData = payload['data'] as Map<String, dynamic>;
+      final newAccessToken = tokenData['access_token'] as String?;
+      final newRefreshToken = tokenData['refresh_token'] as String?;
+
+      if (newAccessToken == null || newRefreshToken == null) {
+        _processQueue(Exception('Refresh response missing token pair'), null);
+        return false;
+      }
+
+      final authState = await _authStore.getAuthState();
+      await _authStore.setTokens(
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        tokenType:
+            tokenData['token_type'] as String? ??
+            authState.tokenType ??
+            'Bearer',
+        expiresIn:
+            tokenData['expires_in'] as int? ?? authState.expiresIn ?? 86400,
+        refreshExpiresIn:
+            tokenData['refresh_expires_in'] as int? ??
+            authState.refreshExpiresIn,
+        userId: authState.userId,
+        role: authState.role,
       );
-      return false;
+
+      _logTokenEvent('token_refresh_success');
+      _processQueue(null, newAccessToken);
+      return true;
     } catch (e) {
       _logTokenEvent('token_refresh_failed', {
         'reason': 'error',

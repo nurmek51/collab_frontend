@@ -32,15 +32,16 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final response = await _remoteDataSource.verifyOtp(phoneNumber, otp);
       final authModel = AuthResponseModel.fromJson(response);
+      final existingUserId = await _secureStorage.getUserId();
 
       // Save tokens to secure storage
-      await _saveAuthData(authModel);
+      await _saveAuthData(authModel, fallbackUserId: existingUserId);
 
       return AuthResponse(
         accessToken: authModel.accessToken,
         refreshToken: authModel.refreshToken,
         expiresIn: authModel.expiresIn,
-        userId: authModel.userId,
+        userId: authModel.userId ?? existingUserId,
         currentRole: authModel.currentRole,
       );
     } catch (e) {
@@ -66,8 +67,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _remoteDataSource.refreshToken(refreshToken);
       final authModel = AuthResponseModel.fromJson(response);
+      final existingUserId = await _secureStorage.getUserId();
 
-      await _saveAuthData(authModel);
+      await _saveAuthData(authModel, fallbackUserId: existingUserId);
       return true;
     } catch (e) {
       await _secureStorage.clearAll();
@@ -123,12 +125,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   /// Save authentication data to secure storage
-  Future<void> _saveAuthData(AuthResponseModel authModel) async {
+  Future<void> _saveAuthData(
+    AuthResponseModel authModel, {
+    String? fallbackUserId,
+  }) async {
     await _secureStorage.saveAccessToken(authModel.accessToken);
     await _secureStorage.saveRefreshToken(authModel.refreshToken);
-    await _secureStorage.saveTokenType('Bearer');
+    await _secureStorage.saveTokenType('bearer');
     await _secureStorage.saveExpiresIn(authModel.expiresIn);
-    await _secureStorage.saveUserId(authModel.userId);
+    final userIdToStore = authModel.userId ?? fallbackUserId;
+    if (userIdToStore != null && userIdToStore.isNotEmpty) {
+      await _secureStorage.saveUserId(userIdToStore);
+    }
     await _secureStorage.saveTokenCreatedAt(DateTime.now());
 
     if (authModel.currentRole != null) {
