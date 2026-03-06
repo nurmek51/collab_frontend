@@ -3,20 +3,23 @@ FROM ghcr.io/cirruslabs/flutter:3.35.5 AS builder
 
 WORKDIR /app
 
+COPY analysis_options.yaml ./analysis_options.yaml
 COPY pubspec.yaml pubspec.lock ./
 RUN --mount=type=cache,target=/root/.pub-cache \
     --mount=type=cache,target=/sdks/flutter/bin/cache \
     flutter pub get
 
+# Copy only the necessary files for building
+COPY assets ./assets
 COPY lib ./lib
 COPY web ./web
-COPY assets ./assets
-COPY analysis_options.yaml ./analysis_options.yaml
 
 ARG DEBUG=false
 ARG BASE_URL=https://collab-api-810993564533.europe-north2.run.app/
 ARG FLUTTER_BUILD_MODE=release
 
+# Use wasm if supported by flutter version if needed, but for now we focus on speed of compilation
+# flutter build web --release --no-tree-shake-icons can be faster in some cases but let's stick to standard 
 RUN --mount=type=cache,target=/root/.pub-cache \
     --mount=type=cache,target=/sdks/flutter/bin/cache \
     flutter build web --${FLUTTER_BUILD_MODE} \
