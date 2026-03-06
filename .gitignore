@@ -91,6 +91,8 @@ app.*.map.json
 **/fastlane/screenshots
 **/fastlane/test_output
 **/fastlane/README.md
+API_DOCUMENTATION.md
+DOCKER_WEB.md
 
 # Code signing
 *.mobileprovision
