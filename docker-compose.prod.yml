@@ -1,0 +1,30 @@
+services:
+  collab-web:
+    container_name: collab-web
+    image: collab-web:runtime
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    networks:
+      - collab-net
+
+  nginx-proxy:
+    image: nginx:1.27-alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/production.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - collab-web
+    restart: unless-stopped
+    networks:
+      - collab-net
+
+networks:
+  collab-net:
+    driver: bridge
