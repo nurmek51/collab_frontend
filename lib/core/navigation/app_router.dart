@@ -66,9 +66,9 @@ class AppRouter {
   static const String freelancerProfileRoute = '/freelancer-profile';
   static const String mySpecializationsRoute = '/my-specializations';
   static const String specializationDetailsRoute = '/specialization-details';
-  static const String adminRoute = '/admin';
-  static const String adminLoginRoute = '/admin/login';
-  static const String adminFreelancersRoute = '/admin/freelancers';
+  static const String adminRoute = '/manage/admin/panel';
+  static const String adminLoginRoute = '/manage/admin/panel/login';
+  static const String adminFreelancersRoute = '/manage/admin/panel/freelancers';
   static const String clientOnboardingRoute = '/client-onboarding';
 
   static final GoRouter router = GoRouter(

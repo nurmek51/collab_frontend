@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../api/auth_api.dart';
+import '../../core/navigation/app_router.dart';
 
 class AdminAuthGuard {
   final AuthApi _authApi;
@@ -16,14 +17,14 @@ class AdminAuthGuard {
     final location = state.uri.toString();
 
     // Skip auth check for admin login page
-    if (location == '/admin/login') {
+    if (location == AppRouter.adminLoginRoute) {
       return null;
     }
 
     try {
       final user = await _authApi.getCurrentUser();
       if (user.isEmpty) {
-        return '/admin/login?redirect=${Uri.encodeComponent(location)}';
+        return '${AppRouter.adminLoginRoute}?redirect=${Uri.encodeComponent(location)}';
       }
       return null;
     } catch (e) {
@@ -31,7 +32,7 @@ class AdminAuthGuard {
       if (kDebugMode) {
         return null; // Allow access in debug mode
       }
-      return '/admin/login?redirect=${Uri.encodeComponent(location)}';
+      return '${AppRouter.adminLoginRoute}?redirect=${Uri.encodeComponent(location)}';
     }
   }
 }

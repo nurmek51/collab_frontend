@@ -19,8 +19,8 @@ class ConditionalResponsiveWrapper extends StatelessWidget {
     if (kIsWeb) {
       // For web, check the current URL
       try {
-        final currentUrl = Uri.base.toString();
-        return currentUrl.contains('/admin');
+        final currentUrl = Uri.base.path;
+        return currentUrl.contains('/manage/admin/panel');
       } catch (e) {
         return false;
       }
