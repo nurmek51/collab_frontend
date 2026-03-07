@@ -9,6 +9,7 @@ import '../../../../core/constants/specialization_constants.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/state/freelancer_onboarding_state.dart';
 import '../../../../shared/services/freelancer_onboarding_service.dart';
+import '../../../../shared/services/freelancer_portfolio_storage_service.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../widgets/gradient_background.dart';
@@ -34,9 +35,12 @@ class _ExperiencePageState extends State<ExperiencePage> {
   final _bioController = TextEditingController();
   final _socialController = TextEditingController();
   final _portfolioController = TextEditingController();
+  FreelancerPortfolioStorageService? _portfolioStorageService;
 
   String? _portfolioFileName;
   bool _hasPortfolioFile = false;
+  // ignore: unused_field
+  PlatformFile? _selectedPortfolioFile;
 
   FreelancerOnboardingState _currentState = const FreelancerOnboardingState();
   bool _isLoading = true;
@@ -52,6 +56,12 @@ class _ExperiencePageState extends State<ExperiencePage> {
   FreelancerOnboardingService get _service {
     _onboardingService ??= sl<FreelancerOnboardingService>();
     return _onboardingService!;
+  }
+
+  // ignore: unused_element
+  FreelancerPortfolioStorageService get _portfolioStorage {
+    _portfolioStorageService ??= sl<FreelancerPortfolioStorageService>();
+    return _portfolioStorageService!;
   }
 
   Future<void> _loadData() async {
@@ -123,13 +133,19 @@ class _ExperiencePageState extends State<ExperiencePage> {
     return {'website': trimmed};
   }
 
-  Future<void> _persistInputs() async {
+  Future<void> _persistInputs({String? portfolioFileUrl}) async {
     // Load current accumulated state and update with form inputs
     final currentState = await _service.getCurrentState();
+    final portfolioLinks = _linksFromInput(_portfolioController.text);
+
+    if (portfolioFileUrl != null && portfolioFileUrl.isNotEmpty) {
+      portfolioLinks['portfolio_file_url'] = portfolioFileUrl;
+    }
+
     final updatedState = currentState.copyWith(
       bio: _bioController.text.trim(),
       socialLinks: _linksFromInput(_socialController.text),
-      portfolioLinks: _linksFromInput(_portfolioController.text),
+      portfolioLinks: portfolioLinks,
     );
 
     await _service.updateState(updatedState);
@@ -160,8 +176,20 @@ class _ExperiencePageState extends State<ExperiencePage> {
     });
 
     try {
+      /* 
+      // TODO: add firebase file storage
+      String? uploadedPortfolioUrl;
+      if (_selectedPortfolioFile?.bytes != null &&
+          (_selectedPortfolioFile?.name.isNotEmpty ?? false)) {
+        uploadedPortfolioUrl = await _portfolioStorage.uploadPortfolioFile(
+          fileBytes: _selectedPortfolioFile!.bytes!,
+          fileName: _selectedPortfolioFile!.name,
+        );
+      }
+      */
+
       // First persist the current inputs to get complete state
-      await _persistInputs();
+      await _persistInputs(portfolioFileUrl: null);
 
       // Load the complete accumulated state with all form data
       final completeState = await _service.getCurrentState();
@@ -204,10 +232,24 @@ class _ExperiencePageState extends State<ExperiencePage> {
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif'],
         allowMultiple: false,
+        withData: true,
       );
 
       if (result != null && result.files.single.name.isNotEmpty) {
+        if (result.files.single.bytes == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Не удалось прочитать файл, выберите другой.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
         setState(() {
+          _selectedPortfolioFile = result.files.single;
           _hasPortfolioFile = true;
           _portfolioFileName = result.files.single.name;
         });
@@ -226,6 +268,7 @@ class _ExperiencePageState extends State<ExperiencePage> {
 
   void _removePortfolioFile() {
     setState(() {
+      _selectedPortfolioFile = null;
       _hasPortfolioFile = false;
       _portfolioFileName = null;
     });

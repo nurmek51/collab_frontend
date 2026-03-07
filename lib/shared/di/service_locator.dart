@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../api/client.dart';
 import '../api/auth_api.dart';
 import '../api/freelancer_api.dart';
@@ -16,6 +17,7 @@ import '../state/freelancer_onboarding_state.dart';
 import '../state/orders_state_manager.dart';
 import '../services/freelancer_profile_status_manager.dart';
 import '../services/freelancer_onboarding_service.dart';
+import '../services/freelancer_portfolio_storage_service.dart';
 import '../guards/auth_guard.dart';
 import '../storage/secure_storage_service.dart';
 import '../storage/preferences_service.dart';
@@ -53,6 +55,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<SecureStorageService>(() => SecureStorageService());
   sl.registerLazySingleton<PreferencesService>(() => PreferencesService());
   sl.registerLazySingleton<DioClient>(() => DioClient(sl<Dio>()));
+  sl.registerLazySingleton<FirebaseStorage>(() => FirebaseStorage.instance);
 
   // Auth domain layer
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -107,6 +110,12 @@ Future<void> initializeDependencies() async {
   );
   sl.registerLazySingleton<FreelancerOnboardingService>(
     () => FreelancerOnboardingService(),
+  );
+  sl.registerLazySingleton<FreelancerPortfolioStorageService>(
+    () => FreelancerPortfolioStorageService(
+      sl<FirebaseStorage>(),
+      sl<AuthStore>(),
+    ),
   );
 
   // Guards

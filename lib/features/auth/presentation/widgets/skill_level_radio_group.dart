@@ -51,7 +51,7 @@ class SkillLevelRadioItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 354.w,
+        width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -82,6 +82,9 @@ class SkillLevelRadioItem extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
+                softWrap: true,
+                maxLines: null,
+                overflow: TextOverflow.visible,
                 style: TextStyle(
                   fontFamily: 'Ubuntu',
                   fontWeight: FontWeight.w400,

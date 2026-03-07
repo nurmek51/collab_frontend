@@ -107,23 +107,14 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   Widget _buildImage() {
-    if (kIsWeb) {
-      // Web: constrained square image with max width
-      return ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 400.w, maxHeight: 400.h),
-        child: AspectRatio(
-          aspectRatio: 1.0,
-          child: Image.asset('assets/images/temp.png', fit: BoxFit.cover),
-        ),
-      );
-    } else {
-      // Mobile: full width square image
-      return SizedBox(
+    return SizedBox(
+      width: double.infinity,
+      child: Image.asset(
+        'assets/images/temp.png',
+        fit: BoxFit.fitWidth,
         width: double.infinity,
-        height: MediaQuery.of(context).size.width,
-        child: Image.asset('assets/images/temp.png', fit: BoxFit.cover),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildLogo() {

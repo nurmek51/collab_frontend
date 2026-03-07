@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 // Conditional import for web-only code
 import 'core/utils/url_strategy_stub.dart'
@@ -19,6 +19,10 @@ void main() async {
 
   // Configure URL strategy (no-op on mobile platforms)
   configureUrlStrategy();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
 
   // Initialize legacy dependencies (backwards compatibility)
   await legacy_di.initializeDependencies();

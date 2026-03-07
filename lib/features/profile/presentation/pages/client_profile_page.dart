@@ -26,15 +26,10 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   // Combined full name controller (Имя и фамилия)
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  // New fields required by the UI (position and company shown in design)
-  final _positionController = TextEditingController();
   final _companyController = TextEditingController();
 
   bool _isLoading = true;
   bool _isSaving = false;
-
-  // Store company ID and last order to update company position
-  String _lastCompanyId = '';
 
   late final UpdateClientProfile _updateClientProfileUseCase;
   late final ApiService _apiService;
@@ -55,7 +50,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
-    _positionController.dispose();
     _companyController.dispose();
     super.dispose();
   }
@@ -82,7 +76,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
       // Try to fetch company details if the order has company_id
       String companyName = '';
-      String clientPosition = '';
 
       if (orders.isNotEmpty) {
         final lastOrder = orders.first as Map<String, dynamic>;
@@ -105,7 +98,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         }
 
         if (companyId != null && companyId.isNotEmpty) {
-          _lastCompanyId = companyId; // Store for later update
           try {
             final companiesApi = sl<CompaniesApi>();
             final companyResponse = await companiesApi.getCompanyById(
@@ -118,16 +110,10 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                   companyResponse['company_name'] ?? companyResponse['name'];
               if (maybeName is String && maybeName.trim().isNotEmpty)
                 companyName = maybeName.trim();
-
-              // Extract client_position directly from company object
-              final maybePos = companyResponse['client_position'];
-              if (maybePos is String && maybePos.trim().isNotEmpty)
-                clientPosition = maybePos.trim();
             }
           } catch (e) {
             // ignore and fallback to order fields
             companyName = '';
-            clientPosition = '';
           }
         }
 
@@ -140,14 +126,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
             'company_full_name',
           ]);
         }
-        if (clientPosition.isEmpty) {
-          clientPosition = _extractOrderField(lastOrder, [
-            'company_position',
-            'position',
-            'company_role',
-            'client_position',
-          ]);
-        }
       }
 
       if (mounted) {
@@ -158,7 +136,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
           _phoneController.text = profile.phoneNumber;
 
           _companyController.text = companyName;
-          _positionController.text = clientPosition;
 
           _isLoading = false;
         });
@@ -177,9 +154,8 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
           setState(() {
             _fullNameController.text = '${name} ${surname}'.trim();
             _phoneController.text = phone;
-            // Position and company remain empty — user hasn't created a client profile/order yet
+            // Company remains empty — user hasn't created a client profile/order yet
             _companyController.text = '';
-            _positionController.text = '';
             _isLoading = false;
           });
         }
@@ -234,21 +210,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         surname: surname,
         phoneNumber: _phoneController.text.trim(),
       );
-
-      // Update company position if company ID is available
-      if (_lastCompanyId.isNotEmpty &&
-          _positionController.text.trim().isNotEmpty) {
-        try {
-          final companiesApi = sl<CompaniesApi>();
-          await companiesApi.updateCompany(
-            _lastCompanyId,
-            clientPosition: _positionController.text.trim(),
-          );
-        } catch (e) {
-          // Log error but don't fail the entire save operation
-          debugPrint('Error updating company position: $e');
-        }
-      }
 
       if (mounted) {
         // ScaffoldMessenger.of(context).showSnackBar(
@@ -424,7 +385,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
                         SizedBox(height: 32.h),
 
-                        // Form fields: Full name, Position, Company, Phone
+                        // Form fields: Full name, Company, Phone
                         Column(
                           children: [
                             _buildInputField(
@@ -434,15 +395,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Введите имя и фамилию';
                                 }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 20.h),
-
-                            _buildInputField(
-                              label: 'Должность',
-                              controller: _positionController,
-                              validator: (value) {
                                 return null;
                               },
                             ),

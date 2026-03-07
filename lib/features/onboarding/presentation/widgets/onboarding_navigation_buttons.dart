@@ -45,7 +45,15 @@ class OnboardingNavigationButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: AppTextStyles.buttonText),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.buttonText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
             if (trailingIcon != null) ...[
               SizedBox(width: 4.w),
               Icon(trailingIcon, color: AppColors.buttonText, size: 18.w),

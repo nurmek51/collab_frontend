@@ -254,6 +254,9 @@ class _SpecializationLevelsPageState extends State<SpecializationLevelsPage>
                   ).copyWith(left: 22.w, bottom: 15.h),
                   child: Text(
                     spec.specialization,
+                    softWrap: true,
+                    maxLines: null,
+                    overflow: TextOverflow.visible,
                     style: TextStyle(
                       fontFamily: 'Ubuntu',
                       fontWeight: FontWeight.w700,
@@ -336,7 +339,7 @@ class _SpecializationLevelsPageState extends State<SpecializationLevelsPage>
                       child: Opacity(
                         opacity: _buttonAnimationController.value,
                         child: Container(
-                          width: 354.w,
+                          width: double.infinity,
                           height: AppDimensions.buttonHeight,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(
@@ -374,6 +377,8 @@ class _SpecializationLevelsPageState extends State<SpecializationLevelsPage>
                               'Отправить заявку',
                               style: AppTextStyles.buttonText,
                               textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
