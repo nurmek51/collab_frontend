@@ -35,12 +35,12 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
-if [[ "${MODE}" == "fast" ]]; then
+if [[ "${MODE}" == "full" ]]; then
+  COMPOSE_FILE="${ROOT_DIR}/docker-compose.prod.yml"
+  IMAGE_PREFIX="collab-web"
+else
   COMPOSE_FILE="${COMPOSE_FAST}"
   IMAGE_PREFIX="collab-web:runtime"
-else
-  COMPOSE_FILE="${COMPOSE_FULL}"
-  IMAGE_PREFIX="collab-web:full"
 fi
 
 TAG="$(date +%Y%m%d%H%M%S)"
@@ -64,8 +64,11 @@ if [[ "${MODE}" == "fast" ]]; then
 fi
 
 echo "[INFO] Building Docker image using $(basename "${COMPOSE_FILE}")"
-DOCKER_BUILDKIT=1 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" build
-docker tag "${WEB_IMAGE}" "${IMAGE_PREFIX}"
+# Use DOCKER_BUILDKIT and explicit build-arg for cache
+export DOCKER_BUILDKIT=1
+docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" build --build-arg BUILDKIT_INLINE_CACHE=1
+# Optional: tag for better caching if using registry, but locally Docker Kit handles it
+# docker tag "${WEB_IMAGE}" "${IMAGE_PREFIX}"
 
 echo "[INFO] Starting updated container"
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --remove-orphans --no-build
