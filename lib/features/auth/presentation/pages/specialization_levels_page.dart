@@ -373,12 +373,15 @@ class _SpecializationLevelsPageState extends State<SpecializationLevelsPage>
                                 vertical: AppDimensions.verticalPadding,
                               ),
                             ),
-                            child: Text(
-                              'Отправить заявку',
-                              style: AppTextStyles.buttonText,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Отправить заявку',
+                                style: AppTextStyles.buttonText,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ),

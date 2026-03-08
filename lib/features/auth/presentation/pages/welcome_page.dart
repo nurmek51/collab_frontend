@@ -140,7 +140,7 @@ class _WelcomePageState extends State<WelcomePage> {
         children: [
           // Freelancer button
           SizedBox(
-            width: 354.w,
+            width: double.infinity,
             height: 52.h,
             child: ElevatedButton(
               onPressed: _isLoading
@@ -164,13 +164,16 @@ class _WelcomePageState extends State<WelcomePage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text(
-                      AppLocalizations.of(context)!.welcome_btn_specialist,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16.sp,
-                        height: 1.25,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppLocalizations.of(context)!.welcome_btn_specialist,
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16.sp,
+                          height: 1.25,
+                        ),
                       ),
                     ),
             ),
@@ -180,7 +183,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
           // Client button
           SizedBox(
-            width: 354.w,
+            width: double.infinity,
             height: 52.h,
             child: ElevatedButton(
               onPressed: _isLoading
@@ -204,13 +207,16 @@ class _WelcomePageState extends State<WelcomePage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text(
-                      AppLocalizations.of(context)!.welcome_btn_employer,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16.sp,
-                        height: 1.25,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppLocalizations.of(context)!.welcome_btn_employer,
+                        style: TextStyle(
+                          fontFamily: 'Ubuntu',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16.sp,
+                          height: 1.25,
+                        ),
                       ),
                     ),
             ),

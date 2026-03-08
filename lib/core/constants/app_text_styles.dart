@@ -11,7 +11,8 @@ class AppTextStyles {
     fontFamily: 'Ubuntu',
     fontWeight: FontWeight.w500,
     fontSize: 17.0,
-    height: 1.149, // lineHeight: 1.1490000556497013em from Figma
+    height: 1.2,
+    leadingDistribution: TextLeadingDistribution.even,
     color: Colors.white,
   );
 

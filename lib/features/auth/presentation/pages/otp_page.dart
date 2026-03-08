@@ -315,7 +315,7 @@ class _OtpPageState extends State<OtpPage> {
     final isEnabled = _otpValidation.isComplete && !_isLoading && !_isVerifying;
 
     return SizedBox(
-      width: 354.w,
+      width: double.infinity,
       height: AppDimensions.buttonHeight,
       child: ElevatedButton(
         onPressed: isEnabled ? _handleVerifyOtp : null,
@@ -346,12 +346,15 @@ class _OtpPageState extends State<OtpPage> {
                   ),
                 ),
               )
-            : Text(
-                _isVerifying ? 'Проверяем...' : 'Продолжить',
-                style: AppTextStyles.buttonText.copyWith(
-                  color: isEnabled ? Colors.white : Colors.grey[600],
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _isVerifying ? 'Проверяем...' : 'Продолжить',
+                  style: AppTextStyles.buttonText.copyWith(
+                    color: isEnabled ? Colors.white : Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
       ),
     );

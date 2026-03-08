@@ -79,13 +79,13 @@ class _SpecializationCheckboxState extends State<SpecializationCheckbox>
         widget.availableLevels != null;
 
     return Container(
-      width: 354.w,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -98,8 +98,8 @@ class _SpecializationCheckboxState extends State<SpecializationCheckbox>
             onTap: widget.onTap,
             child: Container(
               width: double.infinity,
-              height: 70.h,
-              padding: EdgeInsets.all(16.w),
+              constraints: BoxConstraints(minHeight: 70.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: hasDropdown && _heightAnimation.value > 0
@@ -138,6 +138,7 @@ class _SpecializationCheckboxState extends State<SpecializationCheckbox>
                   Expanded(
                     child: Text(
                       widget.title,
+                      softWrap: true,
                       style: TextStyle(
                         fontFamily: 'Ubuntu',
                         fontWeight: FontWeight.w400,
@@ -242,7 +243,7 @@ class _SpecializationCheckboxState extends State<SpecializationCheckbox>
                                           border: isLevelSelected
                                               ? Border.all(
                                                   color: AppColors.black
-                                                      .withOpacity(0.1),
+                                                      .withValues(alpha: 0.1),
                                                   width: 1.0,
                                                 )
                                               : null,
@@ -376,13 +377,13 @@ class _CustomSpecializationInputState extends State<CustomSpecializationInput> {
     if (!widget.isVisible) return const SizedBox.shrink();
 
     return Container(
-      width: 354.w,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

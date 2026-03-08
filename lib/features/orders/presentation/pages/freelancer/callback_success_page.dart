@@ -87,8 +87,8 @@ class CallbackSuccessPage extends StatelessWidget {
 
                     // Got it button
                     SizedBox(
-                      width: 272.w,
-                      height: 50.h,
+                      width: double.infinity,
+                      height: 52.h,
                       child: ElevatedButton(
                         onPressed: () {
                           // Navigate to My Work page
@@ -104,17 +104,22 @@ class CallbackSuccessPage extends StatelessWidget {
                           ),
                           padding: EdgeInsets.symmetric(vertical: 14.h),
                         ),
-                        child: Text(
-                          AppLocalizations.of(context)!.callback_success_button,
-                          style: TextStyle(
-                            fontFamily: 'Ubuntu',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 17.sp,
-                            height:
-                                1.3, // lineHeight: 1.2999999102424173em from Figma
-                            color: AppColors.white,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.callback_success_button,
+                            style: TextStyle(
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 17.sp,
+                              height:
+                                  1.3, // lineHeight: 1.2999999102424173em from Figma
+                              color: AppColors.white,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),

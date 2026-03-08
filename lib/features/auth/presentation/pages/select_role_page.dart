@@ -269,7 +269,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
       children: [
         // Freelancer button
         SizedBox(
-          width: 354.w,
+          width: double.infinity,
           height: 52.h,
           child: ElevatedButton(
             onPressed: _isLoading ? null : () => _selectRole('freelancer'),
@@ -291,13 +291,16 @@ class _SelectRolePageState extends State<SelectRolePage> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Text(
-                    'Войти как Исполнитель',
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16.sp,
-                      height: 1.25,
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Войти как Исполнитель',
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16.sp,
+                        height: 1.25,
+                      ),
                     ),
                   ),
           ),
@@ -307,7 +310,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
 
         // Client button
         SizedBox(
-          width: 354.w,
+          width: double.infinity,
           height: 52.h,
           child: ElevatedButton(
             onPressed: _isLoading ? null : () => _selectRole('client'),
@@ -329,13 +332,16 @@ class _SelectRolePageState extends State<SelectRolePage> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Text(
-                    'Войти как Заказчик',
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16.sp,
-                      height: 1.25,
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Войти как Заказчик',
+                      style: TextStyle(
+                        fontFamily: 'Ubuntu',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16.sp,
+                        height: 1.25,
+                      ),
                     ),
                   ),
           ),

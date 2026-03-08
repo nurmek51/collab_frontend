@@ -64,7 +64,7 @@ class CallbackAcceptedPage extends StatelessWidget {
                     // OK button
                     SizedBox(
                       width: double.infinity,
-                      height: 50.h,
+                      height: 52.h,
                       child: ElevatedButton(
                         onPressed: () {
                           context.go('/my-orders');
@@ -77,13 +77,16 @@ class CallbackAcceptedPage extends StatelessWidget {
                           ),
                           elevation: 0,
                         ),
-                        child: Text(
-                          'Хорошо',
-                          style: TextStyle(
-                            fontFamily: 'Ubuntu',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 16.sp,
-                            height: 1.25,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Хорошо',
+                            style: TextStyle(
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16.sp,
+                              height: 1.25,
+                            ),
                           ),
                         ),
                       ),

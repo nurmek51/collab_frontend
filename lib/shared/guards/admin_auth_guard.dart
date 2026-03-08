@@ -15,9 +15,10 @@ class AdminAuthGuard {
     }
 
     final location = state.uri.toString();
+    final path = state.uri.path;
 
     // Skip auth check for admin login page
-    if (location == AppRouter.adminLoginRoute) {
+    if (path == AppRouter.adminLoginRoute) {
       return null;
     }
 

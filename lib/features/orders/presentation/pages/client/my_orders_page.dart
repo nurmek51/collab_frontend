@@ -272,8 +272,8 @@ class _MyOrdersPageState extends State<MyOrdersPage>
         children: [
           // Create order button
           SizedBox(
-            width: 354.w,
-            height: 50.h,
+            width: double.infinity,
+            height: 52.h,
             child: ElevatedButton(
               onPressed: () {
                 context.push('/new-order');
@@ -288,10 +288,13 @@ class _MyOrdersPageState extends State<MyOrdersPage>
                 ),
                 padding: EdgeInsets.symmetric(vertical: 15.h),
               ),
-              child: Text(
-                AppLocalizations.of(context)!.orders_create_order_button,
-                style: AppTextStyles.buttonText,
-                textAlign: TextAlign.center,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  AppLocalizations.of(context)!.orders_create_order_button,
+                  style: AppTextStyles.buttonText,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),

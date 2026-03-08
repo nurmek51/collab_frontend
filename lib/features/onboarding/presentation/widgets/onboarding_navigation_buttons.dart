@@ -28,37 +28,41 @@ class OnboardingNavigationButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = SizedBox(
       width: width,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: AppColors.buttonBackground,
-          foregroundColor: AppColors.buttonText,
-          padding:
-              padding ?? EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius ?? 16.r),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                style: AppTextStyles.buttonText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: 48.h),
+        child: TextButton(
+          onPressed: onPressed,
+          style: TextButton.styleFrom(
+            backgroundColor: AppColors.buttonBackground,
+            foregroundColor: AppColors.buttonText,
+            padding:
+                padding ??
+                EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+            minimumSize: Size(0, 48.h),
+            tapTargetSize: MaterialTapTargetSize.padded,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadius ?? 16.r),
             ),
-            if (trailingIcon != null) ...[
-              SizedBox(width: 4.w),
-              Icon(trailingIcon, color: AppColors.buttonText, size: 18.w),
-            ],
-          ],
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.buttonText,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                ),
+                if (trailingIcon != null) ...[
+                  SizedBox(width: 4.w),
+                  Icon(trailingIcon, color: AppColors.buttonText, size: 18.w),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

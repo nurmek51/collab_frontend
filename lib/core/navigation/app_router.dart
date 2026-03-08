@@ -74,10 +74,10 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
-      final location = state.uri.toString();
+      final path = state.uri.path;
 
       // Handle admin auth - but skip the login page itself
-      if (location.startsWith(adminRoute) && location != adminLoginRoute) {
+      if (path.startsWith(adminRoute) && path != adminLoginRoute) {
         final adminGuard = sl<AdminAuthGuard>();
         return await adminGuard.checkAdminAuth(state);
       }
@@ -97,8 +97,7 @@ class AppRouter {
           adminLoginRoute,
         ];
 
-        if (!allowedRoutes.contains(location) &&
-            !location.startsWith(adminRoute)) {
+        if (!allowedRoutes.contains(path) && !path.startsWith(adminRoute)) {
           return '/'; // Redirect to landing page
         }
         return null; // Allow access to auth pages
@@ -130,12 +129,12 @@ class AppRouter {
         // Block access to order flow routes if not approved
         if (!canAccessOrderFlow) {
           // Check if trying to access any static order flow route
-          bool isAccessingOrderFlow = orderFlowRoutes.contains(location);
+          bool isAccessingOrderFlow = orderFlowRoutes.contains(path);
 
           // Check if trying to access any dynamic order flow route
           if (!isAccessingOrderFlow) {
             for (final pattern in dynamicOrderFlowPatterns) {
-              if (location.startsWith('$pattern/')) {
+              if (path.startsWith('$pattern/')) {
                 isAccessingOrderFlow = true;
                 break;
               }
@@ -153,16 +152,16 @@ class AppRouter {
         }
 
         // If there's a required redirect from landing page, do it
-        if (redirectRoute != null && location == '/') {
+        if (redirectRoute != null && path == '/') {
           return redirectRoute;
         }
 
-        if (location == '/' && redirectRoute == null && canAccessOrderFlow) {
+        if (path == '/' && redirectRoute == null && canAccessOrderFlow) {
           return myWorkRoute;
         }
 
         // If trying to access success page but not pending, redirect appropriately
-        if (location == successRoute && redirectRoute != successRoute) {
+        if (path == successRoute && redirectRoute != successRoute) {
           return redirectRoute ?? feedRoute;
         }
       } else if (role == 'client') {
@@ -170,12 +169,12 @@ class AppRouter {
         final clientRedirect = await clientGuard.getRequiredRedirect();
 
         // If client needs onboarding and not already on onboarding page
-        if (clientRedirect != null && location != clientOnboardingRoute) {
+        if (clientRedirect != null && path != clientOnboardingRoute) {
           return clientRedirect;
         }
 
         // If on landing page and no onboarding needed, go to orders
-        if (location == '/' && clientRedirect == null) {
+        if (path == '/' && clientRedirect == null) {
           return myOrdersRoute;
         }
       }
@@ -521,7 +520,7 @@ class AppRouter {
               state.extra is Map<String, dynamic> &&
               (state.extra as Map<String, dynamic>)['fromMyWork'] == true;
 
-          print(
+          debugPrint(
             'AppRouter: Building project details page for orderId=$orderId, selectedSpecialization=$selectedSpecialization, vacancyId=$vacancyId, fromMyWork=$fromMyWork',
           );
 

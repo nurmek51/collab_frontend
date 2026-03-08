@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/constants/specialization_constants.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/admin_api.dart';
@@ -296,7 +297,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
                 SvgPicture.asset('assets/svgs/collab_logo.svg', height: 28),
                 const SizedBox(width: 40),
                 GestureDetector(
-                  onTap: () => context.go('/admin'),
+                  onTap: () => context.go(AppRouter.adminRoute),
                   child: _buildTopNavItem('Проекты', active: false),
                 ),
                 const SizedBox(width: 24),

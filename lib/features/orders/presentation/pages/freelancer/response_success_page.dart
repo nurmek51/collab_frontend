@@ -83,7 +83,7 @@ class ResponseSuccessPage extends StatelessWidget {
 
                     // Action button
                     SizedBox(
-                      width: 272.w,
+                      width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => _navigateToWorkPage(context),
                         style: ElevatedButton.styleFrom(
@@ -96,14 +96,17 @@ class ResponseSuccessPage extends StatelessWidget {
                           ),
                           padding: EdgeInsets.symmetric(vertical: 14.h),
                         ),
-                        child: Text(
-                          'На страницу работы',
-                          style: TextStyle(
-                            fontFamily: 'Ubuntu',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 17.sp,
-                            height: 1.3,
-                            color: AppColors.white,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'На страницу работы',
+                            style: TextStyle(
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 17.sp,
+                              height: 1.3,
+                              color: AppColors.white,
+                            ),
                           ),
                         ),
                       ),

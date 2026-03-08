@@ -18,8 +18,6 @@ class AppTheme {
         onPrimary: AppColors.white,
         surface: AppColors.white,
         onSurface: AppColors.black,
-        background: AppColors.white,
-        onBackground: AppColors.black,
       ),
 
       // App bar theme
@@ -47,7 +45,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: AppTextStyles.buttonText,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 52),
         ),
       ),
 

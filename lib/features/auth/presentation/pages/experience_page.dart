@@ -554,13 +554,16 @@ class _ExperiencePageState extends State<ExperiencePage> {
                               ? const CircularProgressIndicator(
                                   color: AppColors.white,
                                 )
-                              : Text(
-                                  'Отправить заявку',
-                                  style: TextStyle(
-                                    fontFamily: 'Ubuntu',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 17.sp,
-                                    color: AppColors.white,
+                              : FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Отправить заявку',
+                                    style: TextStyle(
+                                      fontFamily: 'Ubuntu',
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 17.sp,
+                                      color: AppColors.white,
+                                    ),
                                   ),
                                 ),
                         ),

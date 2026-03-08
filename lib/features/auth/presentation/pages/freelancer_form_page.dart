@@ -209,10 +209,13 @@ class _FreelancerFormPageState extends State<FreelancerFormPage> {
                           vertical: AppDimensions.verticalPadding,
                         ),
                       ),
-                      child: Text(
-                        'Продолжить',
-                        style: AppTextStyles.buttonText,
-                        textAlign: TextAlign.center,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Продолжить',
+                          style: AppTextStyles.buttonText,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
                   ),

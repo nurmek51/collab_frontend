@@ -182,7 +182,7 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
 
   Widget _buildSendCodeButton() {
     return SizedBox(
-      width: 354.w,
+      width: double.infinity,
       height: AppDimensions.buttonHeight,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleSendCode,
@@ -209,13 +209,16 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Text(
-                AppLocalizations.of(context)!.phone_number_btn_send,
-                style: TextStyle(
-                  fontFamily: 'Ubuntu',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16.sp,
-                  height: 1.25,
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  AppLocalizations.of(context)!.phone_number_btn_send,
+                  style: TextStyle(
+                    fontFamily: 'Ubuntu',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16.sp,
+                    height: 1.25,
+                  ),
                 ),
               ),
       ),

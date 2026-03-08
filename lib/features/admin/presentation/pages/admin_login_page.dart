@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/auth_api.dart';
 
@@ -24,6 +25,21 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   bool _showOtpField = false;
   String? _errorMessage;
 
+  String get _redirectTarget {
+    final redirectPath = widget.redirectPath;
+    if (redirectPath == null || redirectPath.isEmpty) {
+      return AppRouter.adminRoute;
+    }
+
+    final parsedUri = Uri.tryParse(redirectPath);
+    final redirectPathOnly = parsedUri?.path ?? redirectPath;
+    if (!redirectPathOnly.startsWith(AppRouter.adminRoute)) {
+      return AppRouter.adminRoute;
+    }
+
+    return redirectPath;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,8 +58,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     try {
       final user = await _authApi.getCurrentUser();
       if (user.isNotEmpty && mounted) {
-        final redirectTo = widget.redirectPath ?? '/admin';
-        context.go(redirectTo);
+        context.go(_redirectTarget);
       }
     } catch (_) {
       // Not authenticated, stay on login page
@@ -59,7 +74,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     });
 
     try {
-      await _authApi.requestOtp("+" + _phoneController.text.trim());
+      await _authApi.requestOtp('+${_phoneController.text.trim()}');
       if (mounted) {
         setState(() {
           _showOtpField = true;
@@ -84,13 +99,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
     try {
       await _authApi.verifyOtp(
-        phoneNumber: "+" + _phoneController.text.trim(),
+        phoneNumber: '+${_phoneController.text.trim()}',
         code: _otpController.text.trim(),
       );
 
       if (mounted) {
-        final redirectTo = widget.redirectPath ?? '/admin';
-        context.go(redirectTo);
+        context.go(_redirectTarget);
       }
     } catch (error) {
       if (mounted) {

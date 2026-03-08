@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../core/navigation/app_router.dart';
 import '../../../../../shared/di/service_locator.dart';
 import '../../../../../shared/api/auth_api.dart';
 
@@ -51,10 +52,13 @@ class _AdminVerifyPageState extends State<AdminVerifyPage> {
     });
 
     try {
-      await _authApi.verifyOtp(phoneNumber: _phone!, code: _codeController.text.trim());
+      await _authApi.verifyOtp(
+        phoneNumber: _phone!,
+        code: _codeController.text.trim(),
+      );
       if (!mounted) return;
       // Navigate to admin root
-      context.go('/admin');
+      context.go(AppRouter.adminRoute);
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -75,20 +79,46 @@ class _AdminVerifyPageState extends State<AdminVerifyPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20)],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 20,
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Verify OTP', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+              const Text(
+                'Verify OTP',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 12),
-              Text(_phone ?? 'No phone provided', style: const TextStyle(color: Colors.black54)),
+              Text(
+                _phone ?? 'No phone provided',
+                style: const TextStyle(color: Colors.black54),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: _codeController, decoration: const InputDecoration(labelText: 'Code')),
+              TextField(
+                controller: _codeController,
+                decoration: const InputDecoration(labelText: 'Code'),
+              ),
               const SizedBox(height: 12),
-              if (_error != null) ...[Text(_error!, style: const TextStyle(color: Colors.red)), const SizedBox(height: 12)],
-              ElevatedButton(onPressed: _isLoading ? null : _verify, child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Verify')),
+              if (_error != null) ...[
+                Text(_error!, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 12),
+              ],
+              ElevatedButton(
+                onPressed: _isLoading ? null : _verify,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Verify'),
+              ),
             ],
           ),
         ),

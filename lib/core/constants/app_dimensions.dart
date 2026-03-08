@@ -9,7 +9,7 @@ class AppDimensions {
   static const double designHeight = 853.0;
 
   // Button dimensions from Figma
-  static double get buttonHeight => 50.h;
+  static double get buttonHeight => 52.h;
   static double get buttonWidth => 322.w;
   static double get buttonBorderRadius => 16.r;
 

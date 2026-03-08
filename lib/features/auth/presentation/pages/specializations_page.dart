@@ -35,12 +35,12 @@ class _SpecializationsPageState extends State<SpecializationsPage>
   FreelancerOnboardingService? _onboardingService;
 
   // Selected specializations and their levels
-  List<SpecializationWithLevel> _selectedSpecializations = [];
-  Map<String, String> _skillLevels = {};
+  final List<SpecializationWithLevel> _selectedSpecializations = [];
+  final Map<String, String> _skillLevels = {};
 
   // Track custom text for "Other" specialization separately
   // Key: specialization name, Value: custom text (only for "Другое")
-  Map<String, String> _customTexts = {};
+  final Map<String, String> _customTexts = {};
 
   // All available specializations from constants
   final List<Map<String, String>> _specializations =
@@ -276,7 +276,7 @@ class _SpecializationsPageState extends State<SpecializationsPage>
           // Back button
           GestureDetector(
             onTap: () => context.pop(),
-            child: Container(
+            child: SizedBox(
               width: 40.w,
               height: 40.h,
               child: Icon(
@@ -402,8 +402,8 @@ class _SpecializationsPageState extends State<SpecializationsPage>
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              AppColors.backgroundColor.withOpacity(0.2),
-                              AppColors.backgroundColor.withOpacity(0.4),
+                              AppColors.backgroundColor.withValues(alpha: 0.2),
+                              AppColors.backgroundColor.withValues(alpha: 0.4),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
@@ -418,7 +418,7 @@ class _SpecializationsPageState extends State<SpecializationsPage>
                       child: Opacity(
                         opacity: _buttonAnimationController.value,
                         child: Container(
-                          width: 354.w,
+                          width: double.infinity,
                           height: AppDimensions.buttonHeight,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(
@@ -426,8 +426,9 @@ class _SpecializationsPageState extends State<SpecializationsPage>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(
-                                  0.16 * _buttonAnimationController.value,
+                                color: Colors.black.withValues(
+                                  alpha:
+                                      0.16 * _buttonAnimationController.value,
                                 ),
                                 offset: const Offset(0, 10),
                                 blurRadius: 16,
@@ -452,10 +453,13 @@ class _SpecializationsPageState extends State<SpecializationsPage>
                                 vertical: AppDimensions.verticalPadding,
                               ),
                             ),
-                            child: Text(
-                              'Продолжить',
-                              style: AppTextStyles.buttonText,
-                              textAlign: TextAlign.center,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Продолжить',
+                                style: AppTextStyles.buttonText,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
                         ),
