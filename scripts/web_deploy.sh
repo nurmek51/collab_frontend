@@ -67,8 +67,11 @@ docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" build --build-arg B
 # Optional: tag for better caching if using registry, but locally Docker Kit handles it
 # docker tag "${WEB_IMAGE}" "${IMAGE_PREFIX}"
 
+echo "[INFO] Stopping and cleaning old container to prevent name conflicts"
+docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" down --remove-orphans || true
+
 echo "[INFO] Starting updated container"
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --remove-orphans --no-build
+docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --no-build
 
 if [[ "${STACK}" == "prod" ]]; then
   HEALTH_URL="https://localhost/health"
