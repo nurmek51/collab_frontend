@@ -23,8 +23,17 @@ echo "[INFO] BASE_URL=${BASE_URL}"
 echo "[INFO] FLUTTER_BUILD_MODE=${FLUTTER_BUILD_MODE}"
 
 cd "${ROOT_DIR}"
-flutter pub get
+PACKAGE_CONFIG="${ROOT_DIR}/.dart_tool/package_config.json"
+
+if [[ ! -f "${PACKAGE_CONFIG}" || "${ROOT_DIR}/pubspec.yaml" -nt "${PACKAGE_CONFIG}" || "${ROOT_DIR}/pubspec.lock" -nt "${PACKAGE_CONFIG}" ]]; then
+  echo "[INFO] Running flutter pub get (dependencies changed)"
+  flutter pub get
+else
+  echo "[INFO] Skipping flutter pub get (dependencies unchanged)"
+fi
+
 flutter build web --"${FLUTTER_BUILD_MODE}" \
+  --no-pub \
   --dart-define=DEBUG="${DEBUG}" \
   --dart-define=BASE_URL="${BASE_URL}"
 

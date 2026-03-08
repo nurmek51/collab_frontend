@@ -4,20 +4,20 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 STEP_BACK="${1:-1}"
-MODE="${2:-fast}"
+STACK="${2:-direct}"
 
 if [[ ! "${STEP_BACK}" =~ ^[12]$ ]]; then
   echo "[ERROR] STEP_BACK must be 1 or 2"
-  echo "Usage: bash scripts/web_rollback.sh [1|2] [fast|full]"
+  echo "Usage: bash scripts/web_rollback.sh [1|2] [direct|prod]"
   exit 1
 fi
 
-if [[ "${MODE}" == "fast" ]]; then
+if [[ "${STACK}" == "direct" ]]; then
   COMPOSE_FILE="${ROOT_DIR}/docker-compose.web.yml"
   IMAGE_PREFIX="collab-web:runtime"
 else
-  COMPOSE_FILE="${ROOT_DIR}/docker-compose.web.full.yml"
-  IMAGE_PREFIX="collab-web:full"
+  COMPOSE_FILE="${ROOT_DIR}/docker-compose.prod.yml"
+  IMAGE_PREFIX="collab-web:runtime"
 fi
 
 if [[ ! -f "${ENV_FILE}" ]]; then
@@ -44,12 +44,18 @@ export WEB_IMAGE="${TARGET_IMAGE}"
 echo "[INFO] Rolling back to ${WEB_IMAGE}"
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --remove-orphans --no-build
 
-WEB_PORT="$(grep -E '^WEB_PORT=' "${ENV_FILE}" | tail -n 1 | cut -d'=' -f2- || true)"
-WEB_PORT="${WEB_PORT:-8080}"
-HEALTH_URL="http://localhost:${WEB_PORT}/health"
+if [[ "${STACK}" == "prod" ]]; then
+  HEALTH_URL="https://localhost/health"
+  CURL_ARGS=(-kfsS)
+else
+  WEB_PORT="$(grep -E '^WEB_PORT=' "${ENV_FILE}" | tail -n 1 | cut -d'=' -f2- || true)"
+  WEB_PORT="${WEB_PORT:-8080}"
+  HEALTH_URL="http://localhost:${WEB_PORT}/health"
+  CURL_ARGS=(-fsS)
+fi
 
 for i in {1..20}; do
-  if curl -fsS "${HEALTH_URL}" >/dev/null 2>&1; then
+  if curl "${CURL_ARGS[@]}" "${HEALTH_URL}" >/dev/null 2>&1; then
     echo "[OK] Rollback completed and service is healthy"
     docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" ps
     exit 0

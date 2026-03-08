@@ -1,65 +1,125 @@
-# Collab Frontend (Flutter Web) in Docker
+# Collab Frontend Docker Deploy
 
-By default this project now uses a **fast runtime-only Docker flow**.
+This project now uses only the fast deploy flow:
 
-- Web bundle is built by Flutter (`build/web`) with env from `.env`
-- Docker builds only the nginx runtime image
-- This is much faster and stable for server deploys
+- Flutter builds `build/web` on the host
+- Docker packages only the nginx runtime image
+- No Flutter compilation happens inside Docker
 
-## One-command deploy (recommended)
+## Deploy modes
+
+### Direct mode
+
+Use this when you want the app served directly on `WEB_PORT`.
 
 ```bash
 bash scripts/web_deploy.sh
 ```
 
-or with Makefile:
+or:
 
 ```bash
 make deploy
 ```
 
-What it does:
+### Prod mode
+
+Use this when you run the full stack with `nginx-proxy`, domain, and SSL.
+
+```bash
+bash scripts/web_deploy.sh --prod
+```
+
+or:
+
+```bash
+make deploy-prod
+```
+
+## What deploy does
+
 - `git pull --ff-only`
-- Flutter web build from `.env` (fast mode)
-- Docker build + `up -d --remove-orphans`
-- health-check on `/health`
-- auto rollback to previous image if health-check fails
-- keeps only last 3 versioned images (current + 2 previous)
+- host-side `flutter build web`
+- very fast runtime Docker build
+- `docker compose up -d --remove-orphans`
+- health check
+- rollback on failure
 
-Useful options:
-
-```bash
-# keep current local commit (skip git pull)
-bash scripts/web_deploy.sh --no-pull
-
-# run full Dockerized build (Flutter build inside Docker)
-bash scripts/web_deploy.sh --full
-
-# prune dangling images after successful deploy
-bash scripts/web_deploy.sh --prune
-```
-
-Helpers:
+## Useful commands
 
 ```bash
-bash scripts/web_status.sh
-bash scripts/web_logs.sh
-bash scripts/web_rollback.sh 1   # rollback to previous version
-bash scripts/web_rollback.sh 2   # rollback to version before previous
-```
-
-Makefile shortcuts:
-
-```bash
+# direct mode
 make deploy
 make deploy-no-pull
 make rollback1
 make rollback2
 make status
 make logs
+
+# prod mode
+make deploy-prod
+make rollback1-prod
+make rollback2-prod
+make status-prod
+make logs-prod
 ```
 
-## systemd (auto-start on reboot)
+## Easy alias / wrapper
+
+Use the helper script:
+
+```bash
+bash scripts/cweb.sh help
+```
+
+Recommended alias on the server:
+
+```bash
+echo "alias cweb='cd /opt/collab_frontend && bash scripts/cweb.sh'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+Then use:
+
+```bash
+cweb deploy
+cweb deploy-prod
+cweb status
+cweb logs
+cweb rollback 1
+cweb rollback-prod 1
+```
+
+## Server setup
+
+```bash
+git clone <your-repo-url> /opt/collab_frontend
+cd /opt/collab_frontend
+cp .env.web.example .env
+```
+
+Edit `.env` and set:
+
+- `BASE_URL`
+- `DEBUG`
+- `FLUTTER_BUILD_MODE=release`
+- `WEB_PORT` for direct mode
+
+If Flutter is not installed on the server, install it once and make sure `flutter` is in `PATH`.
+
+Then run either:
+
+```bash
+bash scripts/web_deploy.sh
+```
+
+or:
+
+```bash
+bash scripts/web_deploy.sh --prod
+```
+
+## systemd
 
 Linux only:
 
@@ -68,95 +128,9 @@ chmod +x scripts/install_systemd_service.sh
 bash scripts/install_systemd_service.sh
 ```
 
-Optional custom values:
+## Cleanup
 
 ```bash
-# app dir, app user, app group
-bash scripts/install_systemd_service.sh /opt/collab_frontend deploy deploy
-```
-
-Service control:
-
-```bash
-sudo systemctl status collab-web.service
-sudo systemctl restart collab-web.service
-sudo journalctl -u collab-web.service -f
-```
-
-Uninstall service:
-
-```bash
-chmod +x scripts/uninstall_systemd_service.sh
-bash scripts/uninstall_systemd_service.sh
-```
-
-## 1) Prepare environment variables
-
-```bash
-cp .env.web.example .env
-```
-
-Edit `.env` and set your real values:
-
-- `BASE_URL` — backend API URL
-- `DEBUG` — `true` or `false`
-- `FLUTTER_BUILD_MODE` — usually `release`
-- `WEB_PORT` — host port (default `8080`)
-
-## 2) Build web bundle (from `.env`)
-
-```bash
-bash scripts/build_web_from_env.sh
-```
-
-## 3) Build and run fast Docker image
-
-```bash
-docker compose -f docker-compose.web.yml --env-file .env build
-docker compose -f docker-compose.web.yml --env-file .env up -d
-```
-
-Notes:
-
-- This path does not download Flutter image inside Docker.
-- Rebuild is usually very fast.
-
-Open: `http://<server-ip>:${WEB_PORT}` (for default config: `http://<server-ip>:8080`)
-
-## 4) Check status and logs
-
-```bash
-docker compose -f docker-compose.web.yml ps
-docker compose -f docker-compose.web.yml logs -f collab-web
-```
-
-Health endpoint:
-
-```bash
-curl http://localhost:${WEB_PORT}/health
-```
-
-## 5) Stop
-
-```bash
-docker compose -f docker-compose.web.yml down
-```
-
-## Full Dockerized build (optional)
-
-If you want Flutter build to run inside Docker instead of host machine:
-
-```bash
-DOCKER_BUILDKIT=1 docker compose -f docker-compose.web.full.yml --env-file .env build
-docker compose -f docker-compose.web.full.yml --env-file .env up -d
-```
-
-First full build can be long because Flutter builder image is large.
-
-## Optional cleanup (if you need to free disk space)
-
-```bash
-docker compose -f docker-compose.web.yml down --remove-orphans
 docker image prune -f
 docker builder prune -f
 ```
