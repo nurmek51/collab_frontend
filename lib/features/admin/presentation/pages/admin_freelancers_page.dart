@@ -69,7 +69,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
           error.toString().contains('403') ||
           error.toString().contains('Unauthorized') ||
           error.toString().contains('unauthorized')) {
-        context.go('/admin/login');
+        context.go('/manage/admin/panel/login');
         return;
       }
 
@@ -114,7 +114,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
           error.toString().contains('403') ||
           error.toString().contains('Unauthorized') ||
           error.toString().contains('unauthorized')) {
-        context.go('/admin/login');
+        context.go('//manage/admin/panel/login');
         return;
       }
 
@@ -321,7 +321,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
                       onPressed: () async {
                         await _authApi.logout();
                         if (mounted) {
-                          context.go('/admin/login');
+                          context.go('/manage/admin/panel/login');
                         }
                       },
                       style: TextButton.styleFrom(

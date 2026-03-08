@@ -126,7 +126,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           error.toString().contains('Forbidden') ||
           error.toString().contains('Access forbidden')) {
         print('Redirecting to login due to auth error');
-        context.go('/admin/login');
+        context.go('/manage/admin/panel/login');
         return;
       }
 
@@ -204,7 +204,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           error.toString().contains('Forbidden') ||
           error.toString().contains('Access forbidden')) {
         print('Redirecting to login due to auth error');
-        context.go('/admin/login');
+        context.go('/manage/admin/panel/login');
         return;
       }
 
@@ -985,7 +985,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                       onPressed: () async {
                         await _authApi.logout();
                         if (mounted) {
-                          context.go('/admin/login');
+                          context.go('/manage/admin/panel/login');
                         }
                       },
                       style: TextButton.styleFrom(
