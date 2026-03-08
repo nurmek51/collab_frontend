@@ -58,7 +58,7 @@ if [[ "${DO_PULL}" == "true" ]]; then
 fi
 
 echo "[INFO] Building Flutter web artifacts from .env"
-bash scripts/build_web_from_env.sh
+bash scripts/build_web_from_env.sh || exit 1
 
 echo "[INFO] Building Docker image using $(basename "${COMPOSE_FILE}")"
 # Use DOCKER_BUILDKIT and explicit build-arg for cache
