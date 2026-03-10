@@ -23,16 +23,13 @@ class AdminAuthGuard {
     }
 
     try {
-      final user = await _authApi.getCurrentUser();
-      if (user.isEmpty) {
+      final isAdmin = await _authApi.isCurrentUserAdmin();
+      if (!isAdmin) {
         return '${AppRouter.adminLoginRoute}?redirect=${Uri.encodeComponent(location)}';
       }
+
       return null;
     } catch (e) {
-      // For development: allow access when backend is down
-      if (kDebugMode) {
-        return null; // Allow access in debug mode
-      }
       return '${AppRouter.adminLoginRoute}?redirect=${Uri.encodeComponent(location)}';
     }
   }

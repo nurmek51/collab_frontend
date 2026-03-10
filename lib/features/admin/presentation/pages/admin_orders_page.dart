@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/specialization_constants.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../data/repositories/admin_projects_repository.dart';
 import '../../data/models/admin_project_model.dart';
 import '../../data/models/admin_order_model.dart';
@@ -93,9 +94,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   Future<void> _loadUser() async {
     try {
       final user = await _authApi.getCurrentUser();
-      final data = user.isNotEmpty && user['data'] is Map<String, dynamic>
-          ? user['data'] as Map<String, dynamic>
-          : user;
+      final data = _authApi.extractUserData(user);
       final name = (data['name'] as String?)?.trim() ?? '';
       final surname = (data['surname'] as String?)?.trim() ?? '';
       if (!mounted) {
@@ -126,7 +125,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           error.toString().contains('Forbidden') ||
           error.toString().contains('Access forbidden')) {
         print('Redirecting to login due to auth error');
-        context.go('/manage/admin/panel/login');
+        context.go(AppRouter.adminLoginRoute);
         return;
       }
 
@@ -204,7 +203,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           error.toString().contains('Forbidden') ||
           error.toString().contains('Access forbidden')) {
         print('Redirecting to login due to auth error');
-        context.go('/manage/admin/panel/login');
+        context.go(AppRouter.adminLoginRoute);
         return;
       }
 
@@ -965,7 +964,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                 _buildTopNavItem('Заказчики'),
                 const SizedBox(width: 24),
                 GestureDetector(
-                  onTap: () => context.go('/admin/freelancers'),
+                  onTap: () => context.go(AppRouter.adminFreelancersRoute),
                   child: _buildTopNavItem('Исполнители'),
                 ),
                 const Spacer(),
@@ -985,7 +984,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                       onPressed: () async {
                         await _authApi.logout();
                         if (mounted) {
-                          context.go('/manage/admin/panel/login');
+                          context.go(AppRouter.adminLoginRoute);
                         }
                       },
                       style: TextButton.styleFrom(

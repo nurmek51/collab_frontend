@@ -33,7 +33,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
     final parsedUri = Uri.tryParse(redirectPath);
     final redirectPathOnly = parsedUri?.path ?? redirectPath;
-    if (!redirectPathOnly.startsWith(AppRouter.adminRoute)) {
+    if (redirectPathOnly == AppRouter.adminLoginRoute ||
+        !redirectPathOnly.startsWith(AppRouter.adminRoute)) {
       return AppRouter.adminRoute;
     }
 
@@ -56,8 +57,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   Future<void> _checkExistingAuth() async {
     try {
-      final user = await _authApi.getCurrentUser();
-      if (user.isNotEmpty && mounted) {
+      final isAdmin = await _authApi.isCurrentUserAdmin();
+      if (isAdmin && mounted) {
         context.go(_redirectTarget);
       }
     } catch (_) {
@@ -102,6 +103,21 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         phoneNumber: '+${_phoneController.text.trim()}',
         code: _otpController.text.trim(),
       );
+
+      final isAdmin = await _authApi.isCurrentUserAdmin();
+      if (!isAdmin) {
+        await _authApi.logout();
+
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'У этой учетной записи нет доступа к админ панели';
+            _isLoading = false;
+            _showOtpField = false;
+            _otpController.clear();
+          });
+        }
+        return;
+      }
 
       if (mounted) {
         context.go(_redirectTarget);

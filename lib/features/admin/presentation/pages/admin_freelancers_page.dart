@@ -42,9 +42,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
   Future<void> _loadUser() async {
     try {
       final user = await _authApi.getCurrentUser();
-      final data = user.isNotEmpty && user['data'] is Map<String, dynamic>
-          ? user['data'] as Map<String, dynamic>
-          : user;
+      final data = _authApi.extractUserData(user);
       final name = (data['name'] as String?)?.trim() ?? '';
       final surname = (data['surname'] as String?)?.trim() ?? '';
       if (!mounted) {
@@ -69,7 +67,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
           error.toString().contains('403') ||
           error.toString().contains('Unauthorized') ||
           error.toString().contains('unauthorized')) {
-        context.go('/manage/admin/panel/login');
+        context.go(AppRouter.adminLoginRoute);
         return;
       }
 
@@ -114,7 +112,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
           error.toString().contains('403') ||
           error.toString().contains('Unauthorized') ||
           error.toString().contains('unauthorized')) {
-        context.go('//manage/admin/panel/login');
+        context.go(AppRouter.adminLoginRoute);
         return;
       }
 
@@ -321,7 +319,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
                       onPressed: () async {
                         await _authApi.logout();
                         if (mounted) {
-                          context.go('/manage/admin/panel/login');
+                          context.go(AppRouter.adminLoginRoute);
                         }
                       },
                       style: TextButton.styleFrom(

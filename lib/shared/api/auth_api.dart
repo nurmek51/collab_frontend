@@ -95,6 +95,43 @@ class AuthApi {
     );
   }
 
+  Map<String, dynamic> extractUserData(Map<String, dynamic> user) {
+    final nestedData = user['data'];
+    if (nestedData is Map<String, dynamic>) {
+      return nestedData;
+    }
+
+    return user;
+  }
+
+  bool userHasRole(Map<String, dynamic> user, String role) {
+    final normalizedUser = extractUserData(user);
+    final expectedRole = role.trim().toLowerCase();
+
+    final roles = normalizedUser['roles'];
+    if (roles is Iterable) {
+      return roles.any(
+        (item) => item.toString().trim().toLowerCase() == expectedRole,
+      );
+    }
+
+    final currentRole = normalizedUser['role'];
+    if (currentRole is String) {
+      return currentRole.trim().toLowerCase() == expectedRole;
+    }
+
+    return false;
+  }
+
+  Future<bool> isCurrentUserAdmin() async {
+    try {
+      final user = await getCurrentUser();
+      return userHasRole(user, 'admin');
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Update current user information
   Future<Map<String, dynamic>> updateUser({
     String? name,
