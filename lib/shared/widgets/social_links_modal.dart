@@ -62,7 +62,7 @@ class SocialLinksModal extends StatelessWidget {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Текст о том, что мы на связи в телеграм (а может и в вацапе), Мария приди!',
+                  'Есть вопрос? Напишите нам — ответим и поможем.',
                   style: TextStyle(
                     fontFamily: 'Ubuntu',
                     fontWeight: FontWeight.w400,
@@ -78,7 +78,7 @@ class SocialLinksModal extends StatelessWidget {
                       onTap: _openTelegram,
                       backgroundColor: const Color(0xFF1EA1F3),
                       borderColor: Colors.white.withValues(alpha: 0.12),
-                      text: 'Поддержка в Telegram',
+                      text: 'Написать в Telegram',
                       iconAsset: 'assets/svgs/telegram_icon.svg',
                       screenWidth: screenWidth,
                     ),
@@ -87,7 +87,7 @@ class SocialLinksModal extends StatelessWidget {
                       onTap: _openWhatsApp,
                       backgroundColor: const Color(0xFF25D366),
                       borderColor: const Color(0xFF25D366),
-                      text: 'Поддержка в Whatsapp',
+                      text: 'Написать в WhatsApp',
                       iconAsset: 'assets/svgs/whatsapp_icon.svg',
                       screenWidth: screenWidth,
                     ),
