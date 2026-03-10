@@ -45,6 +45,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   void initState() {
     super.initState();
     _authApi = sl<AuthApi>();
+    _phoneController.text = '+';
     _checkExistingAuth();
   }
 
@@ -75,7 +76,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     });
 
     try {
-      await _authApi.requestOtp('+${_phoneController.text.trim()}');
+      await _authApi.requestOtp(_phoneController.text.trim());
       if (mounted) {
         setState(() {
           _showOtpField = true;
@@ -100,7 +101,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
     try {
       await _authApi.verifyOtp(
-        phoneNumber: '+${_phoneController.text.trim()}',
+        phoneNumber: _phoneController.text.trim(),
         code: _otpController.text.trim(),
       );
 
@@ -191,7 +192,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
                       labelText: 'Номер телефона',
-                      hintText: '+7 XXX XXX XX XX',
+                      hintText: '',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -199,11 +200,13 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       fillColor: AppColors.adminBackground,
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                      if (value == null ||
+                          value.trim().isEmpty ||
+                          value.trim() == '+') {
                         return 'Введите номер телефона';
                       }
                       if (!RegExp(
-                        r'^\+?\d{11,}$',
+                        r'^\+\d{11,}$',
                       ).hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
                         return 'Неверный формат номера';
                       }
