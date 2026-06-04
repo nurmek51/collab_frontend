@@ -48,11 +48,11 @@ class FreelancerProfileGuard {
         case 'approved':
           return null; // No redirect needed
         default:
-          return '/freelancer-form';
+          return null;
       }
     } catch (e) {
-      // If error, redirect to form to be safe
-      return '/freelancer-form';
+      // Unknown status — do not force redirect away from current route
+      return null;
     }
   }
 }

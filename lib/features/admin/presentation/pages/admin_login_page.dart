@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/navigation/app_router.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/auth_api.dart';
+import '../../../../shared/services/admin_session.dart';
 
 class AdminLoginPage extends StatefulWidget {
   final String? redirectPath;
@@ -60,6 +61,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     try {
       final isAdmin = await _authApi.isCurrentUserAdmin();
       if (isAdmin && mounted) {
+        sl<AdminSession>().markAuthenticated();
         context.go(_redirectTarget);
       }
     } catch (_) {
@@ -121,6 +123,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       }
 
       if (mounted) {
+        sl<AdminSession>().markAuthenticated();
         context.go(_redirectTarget);
       }
     } catch (error) {

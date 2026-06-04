@@ -206,7 +206,18 @@ class AuthStore {
   Future<bool> isAuthenticated() async {
     try {
       final authState = await getAuthState();
-      return authState.isAuthenticated;
+      if (authState.isAuthenticated) {
+        return true;
+      }
+
+      // Access token present but expired — still treat as logged in if refresh exists
+      if (authState.accessToken != null &&
+          authState.refreshToken != null &&
+          authState.refreshToken!.isNotEmpty) {
+        return true;
+      }
+
+      return false;
     } catch (e) {
       print('Error checking authentication: $e');
       return false;

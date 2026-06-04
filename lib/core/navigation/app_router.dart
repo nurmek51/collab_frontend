@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'auth_refresh_notifier.dart';
 import '../animations/smooth_page_transition.dart';
 import '../animations/animation_constants.dart';
 import '../../features/auth/presentation/pages/landing_page.dart';
@@ -71,8 +72,37 @@ class AppRouter {
   static const String adminFreelancersRoute = '/manage/admin/panel/freelancers';
   static const String clientOnboardingRoute = '/client-onboarding';
 
+  static const List<String> _freelancerOnboardingRoutes = [
+    freelancerFormRoute,
+    specializationsRoute,
+    specializationLevelsRoute,
+    experienceRoute,
+    successRoute,
+  ];
+
+  static const List<String> _authFlowRoutes = [
+    '/',
+    welcomeRoute,
+    phoneNumberRoute,
+    otpRoute,
+    selectRoleRoute,
+  ];
+
+  static const List<String> _clientAppRoutes = [
+    myOrdersRoute,
+    newOrderRoute,
+    clientOnboardingRoute,
+    clientProfileRoute,
+    clientOrderDetailsRoute,
+    clientDocumentsRoute,
+    callbackAcceptedRoute,
+  ];
+
+  static final AuthRefreshNotifier authRefreshNotifier = AuthRefreshNotifier();
+
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    refreshListenable: authRefreshNotifier,
     redirect: (context, state) async {
       final path = state.uri.path;
 
@@ -89,49 +119,60 @@ class AppRouter {
       // If not authenticated, allow access to auth flow pages only
       if (!isAuthenticated) {
         final allowedRoutes = [
-          '/',
-          welcomeRoute,
-          phoneNumberRoute,
-          otpRoute,
-          selectRoleRoute,
+          ..._authFlowRoutes,
           adminLoginRoute,
         ];
 
         if (!allowedRoutes.contains(path) && !path.startsWith(adminRoute)) {
-          return '/'; // Redirect to landing page
+          return '/';
         }
-        return null; // Allow access to auth pages
+        return null;
       }
 
       // User is authenticated - check role and profile status
       final role = await authStore.getRole();
 
+      if (role == null || role.isEmpty) {
+        if (path != selectRoleRoute && !path.startsWith(adminRoute)) {
+          return selectRoleRoute;
+        }
+        return null;
+      }
+
       if (role == 'freelancer') {
         final guard = sl<FreelancerProfileGuard>();
         final redirectRoute = await guard.getRequiredRedirect();
-
-        // Get the actual profile status to determine if they can access order flow
         final canAccessOrderFlow = await guard.canAccessOrderFlow();
 
-        // Define freelancer-specific routes that require approved status
+        // Preserve URL on web refresh during onboarding / pending review
+        if (_freelancerOnboardingRoutes.contains(path)) {
+          if (path == successRoute && canAccessOrderFlow) {
+            return myWorkRoute;
+          }
+          return null;
+        }
+
         final orderFlowRoutes = [
           myWorkRoute,
           feedRoute,
+          paymentsRoute,
           projectDetailsRoute,
           freelancerProfileRoute,
+          responseSuccessRoute,
+          callbackSuccessRoute,
+          mySpecializationsRoute,
+          specializationDetailsRoute,
         ];
 
-        // Define dynamic route patterns for routes with parameters
         final dynamicOrderFlowPatterns = [
-          projectDetailsRoute, // /project-details/:orderId
+          projectDetailsRoute,
+          clientOrderDetailsRoute,
+          clientDocumentsRoute,
         ];
 
-        // Block access to order flow routes if not approved
         if (!canAccessOrderFlow) {
-          // Check if trying to access any static order flow route
-          bool isAccessingOrderFlow = orderFlowRoutes.contains(path);
+          var isAccessingOrderFlow = orderFlowRoutes.contains(path);
 
-          // Check if trying to access any dynamic order flow route
           if (!isAccessingOrderFlow) {
             for (final pattern in dynamicOrderFlowPatterns) {
               if (path.startsWith('$pattern/')) {
@@ -142,40 +183,36 @@ class AppRouter {
           }
 
           if (isAccessingOrderFlow) {
-            // Force redirect to appropriate page based on status
-            if (redirectRoute != null) {
-              return redirectRoute;
-            }
-            // Fallback to success page for pending users
-            return successRoute;
+            return redirectRoute ?? successRoute;
           }
         }
 
-        // If there's a required redirect from landing page, do it
-        if (redirectRoute != null && path == '/') {
-          return redirectRoute;
-        }
-
-        if (path == '/' && redirectRoute == null && canAccessOrderFlow) {
-          return myWorkRoute;
-        }
-
-        // If trying to access success page but not pending, redirect appropriately
-        if (path == successRoute && redirectRoute != successRoute) {
-          return redirectRoute ?? feedRoute;
+        if (path == '/') {
+          if (redirectRoute != null) {
+            return redirectRoute;
+          }
+          if (canAccessOrderFlow) {
+            return myWorkRoute;
+          }
+          return freelancerFormRoute;
         }
       } else if (role == 'client') {
         final clientGuard = sl<ClientGuard>();
         final clientRedirect = await clientGuard.getRequiredRedirect();
 
-        // If client needs onboarding and not already on onboarding page
-        if (clientRedirect != null && path != clientOnboardingRoute) {
+        final isClientAppRoute =
+            _clientAppRoutes.contains(path) ||
+            path.startsWith('$clientOrderDetailsRoute/') ||
+            path.startsWith('$clientDocumentsRoute/');
+
+        if (clientRedirect != null &&
+            path != clientOnboardingRoute &&
+            !isClientAppRoute) {
           return clientRedirect;
         }
 
-        // If on landing page and no onboarding needed, go to orders
-        if (path == '/' && clientRedirect == null) {
-          return myOrdersRoute;
+        if (path == '/') {
+          return clientRedirect ?? myOrdersRoute;
         }
       }
 

@@ -10,6 +10,7 @@ import '../api/companies_api.dart';
 import '../api/clients_api.dart';
 import '../api/admin_api.dart';
 import '../guards/admin_auth_guard.dart';
+import '../services/admin_session.dart';
 import '../guards/freelancer_profile_guard.dart';
 import '../guards/client_guard.dart';
 import '../state/auth.dart';
@@ -36,6 +37,7 @@ final GetIt sl = GetIt.instance;
 Future<void> initializeDependencies() async {
   // Core services
   sl.registerLazySingleton<AuthStore>(() => AuthStore());
+  sl.registerLazySingleton<AdminSession>(() => AdminSession());
   sl.registerLazySingleton<FreelancerOnboardingStore>(
     () => FreelancerOnboardingStore(),
   );
@@ -77,7 +79,11 @@ Future<void> initializeDependencies() async {
 
   // API services
   sl.registerLazySingleton<AuthApi>(
-    () => AuthApi(sl<ApiClient>(), sl<AuthStore>()),
+    () => AuthApi(
+      sl<ApiClient>(),
+      sl<AuthStore>(),
+      adminSession: sl<AdminSession>(),
+    ),
   );
   sl.registerLazySingleton<FreelancerApi>(() => FreelancerApi(sl<ApiClient>()));
   sl.registerLazySingleton<OrdersApi>(() => OrdersApi(sl<ApiClient>()));
@@ -89,7 +95,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<AdminApi>(() => AdminApi(sl<ApiClient>()));
 
   // Guards
-  sl.registerLazySingleton<AdminAuthGuard>(() => AdminAuthGuard(sl<AuthApi>()));
+  sl.registerLazySingleton<AdminAuthGuard>(
+    () => AdminAuthGuard(sl<AuthApi>(), sl<AuthStore>(), sl<AdminSession>()),
+  );
   sl.registerLazySingleton<FreelancerProfileGuard>(
     () => FreelancerProfileGuard(
       sl<FreelancerProfileStatusManager>(),

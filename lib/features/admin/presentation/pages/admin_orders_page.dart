@@ -18,7 +18,6 @@ import '../../../../shared/api/companies_api.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/api/auth_api.dart';
 import '../../../../shared/api/applications_api.dart';
-import '../../../../shared/api/client.dart';
 import '../../../../shared/models/company_option.dart';
 import '../../../../shared/widgets/company_dropdown_field.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
@@ -115,20 +114,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
         return;
       }
 
-      // Debug: Print the error to understand what we're getting
-      print('Auth error in _loadUser: $error');
-
-      // Check for 403 unauthorized error and redirect to login
-      if ((error is ApiException && error.statusCode == 403) ||
-          error.toString().contains('403') ||
-          error.toString().contains('Unauthorized') ||
-          error.toString().contains('Forbidden') ||
-          error.toString().contains('Access forbidden')) {
-        print('Redirecting to login due to auth error');
-        context.go(AppRouter.adminLoginRoute);
-        return;
-      }
-
       setState(() {
         _userDisplayName = 'Администратор';
       });
@@ -190,20 +175,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       }
     } catch (error) {
       if (!mounted) {
-        return;
-      }
-
-      // Debug: Print the error to understand what we're getting
-      print('Auth error in _loadProjects: $error');
-
-      // Check for 403 unauthorized error and redirect to login
-      if ((error is ApiException && error.statusCode == 403) ||
-          error.toString().contains('403') ||
-          error.toString().contains('Unauthorized') ||
-          error.toString().contains('Forbidden') ||
-          error.toString().contains('Access forbidden')) {
-        print('Redirecting to login due to auth error');
-        context.go(AppRouter.adminLoginRoute);
         return;
       }
 

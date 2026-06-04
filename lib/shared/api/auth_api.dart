@@ -1,12 +1,20 @@
 import 'client.dart';
 import '../state/auth.dart';
+import '../services/admin_session.dart';
+import '../../core/navigation/app_router.dart';
 
 /// Authentication API endpoints
 class AuthApi {
   final ApiClient _client;
   final AuthStore _authStore;
+  final AdminSession? _adminSession;
 
-  AuthApi(this._client, this._authStore);
+  AuthApi(this._client, this._authStore, {AdminSession? adminSession})
+    : _adminSession = adminSession;
+
+  void _notifyAuthChanged() {
+    AppRouter.authRefreshNotifier.refresh();
+  }
 
   /// Request OTP for phone number
   Future<Map<String, dynamic>> requestOtp(String phoneNumber) async {
@@ -42,6 +50,7 @@ class AuthApi {
         expiresIn: response['expires_in'] as int? ?? 86400,
         refreshExpiresIn: response['refresh_expires_in'] as int?,
       );
+      _notifyAuthChanged();
     }
 
     return response;
@@ -68,6 +77,7 @@ class AuthApi {
         expiresIn: response['expires_in'] as int? ?? 86400,
         refreshExpiresIn: response['refresh_expires_in'] as int?,
       );
+      _notifyAuthChanged();
     }
 
     return response;
@@ -83,6 +93,7 @@ class AuthApi {
 
     // Save role after successful selection
     await _authStore.setRole(role);
+    _notifyAuthChanged();
 
     return response;
   }
@@ -152,6 +163,8 @@ class AuthApi {
 
   /// Logout (clear local tokens)
   Future<void> logout() async {
+    _adminSession?.clear();
     await _authStore.clearTokens();
+    _notifyAuthChanged();
   }
 }

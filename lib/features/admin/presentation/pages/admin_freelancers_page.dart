@@ -8,7 +8,6 @@ import '../../../../core/constants/specialization_constants.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/admin_api.dart';
 import '../../../../shared/api/auth_api.dart';
-import '../../../../shared/api/client.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
 
 class AdminFreelancersPage extends StatefulWidget {
@@ -63,14 +62,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
         return;
       }
 
-      if ((error is ApiException && error.statusCode == 403) ||
-          error.toString().contains('403') ||
-          error.toString().contains('Unauthorized') ||
-          error.toString().contains('unauthorized')) {
-        context.go(AppRouter.adminLoginRoute);
-        return;
-      }
-
       setState(() {
         _userDisplayName = 'Администратор';
       });
@@ -105,14 +96,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
       });
     } catch (error) {
       if (!mounted) {
-        return;
-      }
-
-      if ((error is ApiException && error.statusCode == 403) ||
-          error.toString().contains('403') ||
-          error.toString().contains('Unauthorized') ||
-          error.toString().contains('unauthorized')) {
-        context.go(AppRouter.adminLoginRoute);
         return;
       }
 

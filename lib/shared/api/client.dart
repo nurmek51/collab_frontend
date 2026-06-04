@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import '../state/auth.dart';
+import '../di/service_locator.dart';
+import '../services/admin_session.dart';
 import '../../core/config/app_config.dart';
+import '../../core/navigation/app_router.dart';
 
 /// API response envelope structure
 class ApiResponse<T> {
@@ -92,11 +95,11 @@ class ApiClient {
                   handler.resolve(retryResponse);
                   return;
                 } catch (_) {
-                  await _authStore.clearTokens();
+                  await _clearSession();
                 }
               }
             } else {
-              await _authStore.clearTokens();
+              await _clearSession();
             }
           }
 
@@ -236,6 +239,14 @@ class ApiClient {
     }
   }
 
+  Future<void> _clearSession() async {
+    if (sl.isRegistered<AdminSession>()) {
+      sl<AdminSession>().clear();
+    }
+    await _authStore.clearTokens();
+    AppRouter.authRefreshNotifier.refresh();
+  }
+
   Future<bool> _refreshSession() async {
     if (_pendingRefresh != null) {
       return _pendingRefresh!;
@@ -289,6 +300,7 @@ class ApiClient {
         userId: previousState.userId,
       );
 
+      AppRouter.authRefreshNotifier.refresh();
       completer.complete(true);
       return true;
     } catch (_) {
