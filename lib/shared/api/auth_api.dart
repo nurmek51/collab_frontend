@@ -1,3 +1,7 @@
+import 'package:dio/dio.dart';
+
+import '../utils/avatar_file_utils.dart';
+import 'avatar_models.dart';
 import 'client.dart';
 import '../state/auth.dart';
 import '../services/admin_session.dart';
@@ -158,6 +162,52 @@ class AuthApi {
       '/users/me',
       data: data,
       fromJson: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  Future<AvatarUploadResult> uploadAvatar({
+    required String fileName,
+    required List<int> fileBytes,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(
+        fileBytes,
+        filename: fileName,
+        contentType: mimeTypeForAvatarFile(fileName),
+      ),
+    });
+
+    return _client.postMultipart<AvatarUploadResult>(
+      '/users/me/avatar',
+      data: formData,
+      onSendProgress: onSendProgress,
+      fromJson: (data) =>
+          AvatarUploadResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<AvatarDownloadResult> getMyAvatarDownloadUrl() async {
+    return _client.get<AvatarDownloadResult>(
+      '/users/me/avatar',
+      fromJson: (data) =>
+          AvatarDownloadResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<AvatarDownloadResult> getUserAvatarDownloadUrl(String userId) async {
+    return _client.get<AvatarDownloadResult>(
+      '/users/$userId/avatar',
+      fromJson: (data) =>
+          AvatarDownloadResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<AvatarDeleteResult> deleteAvatar() async {
+    return _client.delete<AvatarDeleteResult>(
+      '/users/me/avatar',
+      fromJson: (data) =>
+          AvatarDeleteResult.fromJson(data as Map<String, dynamic>),
     );
   }
 

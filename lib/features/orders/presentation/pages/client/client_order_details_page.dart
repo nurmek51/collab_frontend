@@ -14,6 +14,7 @@ import '../../../data/models/company_model.dart';
 import '../../../data/models/freelancer_model.dart';
 import '../../widgets/colleague_info_modal_new.dart';
 import '../../../../../shared/widgets/social_links_modal.dart';
+import '../../../../../shared/widgets/user_avatar.dart';
 
 /// Client Order Details Page
 /// Shows order details from client perspective with team members and payment history
@@ -367,30 +368,12 @@ class _ClientOrderDetailsPageState extends State<ClientOrderDetailsPage> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 51.w,
-              height: 51.h,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFD9D9D9),
-              ),
-              child: colleague.avatarUrl != null
-                  ? ClipOval(
-                      child: Image.network(
-                        colleague.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.person,
-                          size: 25.w,
-                          color: AppColors.primaryText,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.person,
-                      size: 25.w,
-                      color: AppColors.primaryText,
-                    ),
+            UserAvatar(
+              userId: colleague.userId,
+              hasAvatar: colleague.hasAvatar,
+              name: colleague.name,
+              surname: colleague.surname,
+              size: 51.w,
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -620,27 +603,7 @@ class _ClientOrderDetailsPageState extends State<ClientOrderDetailsPage> {
                 final chatLink = orderDetails?.chatLink;
                 if (chatLink != null && chatLink.isNotEmpty) {
                   final success = await DeepLinkUtils.openDeepLink(chatLink);
-                  if (!success) {
-                    if (mounted) {
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   const SnackBar(
-                      //     content: Text(
-                      //       'Не удалось открыть чат. Попробуйте позже.',
-                      //     ),
-                      //     backgroundColor: Colors.orange,
-                      //   ),
-                      // );
-                    }
-                  }
-                } else {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ссылка на чат недоступна.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
+                  if (!success && mounted) {}
                 }
               },
               text: 'Рабочий чат',

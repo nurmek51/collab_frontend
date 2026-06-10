@@ -13,6 +13,7 @@ import '../../../domain/entities/order.dart';
 import '../../widgets/custom_input_field.dart';
 import '../../../../../shared/di/service_locator.dart';
 import '../../../../../shared/utils/help_utils.dart';
+import '../../../../../shared/utils/help_request_utils.dart';
 import '../../../../../shared/widgets/enhanced_company_field.dart';
 import '../../../../../shared/services/callback_button_manager.dart';
 import '../../../../../shared/state/orders_state_manager.dart';
@@ -89,12 +90,9 @@ class _NewOrderPageState extends State<NewOrderPage> {
           context.push('/callback-accepted');
         }
       },
-      onError: (errorMessage) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-          );
-        }
+      onError: (error) {
+        if (!mounted || !HelpRequestUtils.shouldShowDialog(error)) return;
+        HelpRequestUtils.showErrorDialog(context, error);
       },
     );
   }
@@ -146,25 +144,12 @@ class _NewOrderPageState extends State<NewOrderPage> {
         _ordersStateManager.addOrderOptimistically(createdOrder);
 
         // Show success and navigate back
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Заказ успешно создан!'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
         // Remove optimistic order on failure
         _ordersStateManager.removeOrderOptimistically(optimisticOrder.id);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка создания заказа: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
 
         // Focus first invalid field if validation error
         final firstErrorWidget = _getFirstErrorWidget();
@@ -254,12 +239,6 @@ class _NewOrderPageState extends State<NewOrderPage> {
           _isNameEditable = true;
           _isLoadingProfile = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Не удалось загрузить профиль: $e'),
-            backgroundColor: Colors.orange,
-          ),
-        );
       }
     }
   }

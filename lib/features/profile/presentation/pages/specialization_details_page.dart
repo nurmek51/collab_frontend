@@ -263,12 +263,9 @@ class _SpecializationDetailsPageState extends State<SpecializationDetailsPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка сохранения: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+        });
       }
     } finally {
       if (mounted) {
@@ -350,14 +347,6 @@ class _SpecializationDetailsPageState extends State<SpecializationDetailsPage> {
               }
             } catch (e) {
               if (mounted) {
-                // Show error and close dialog with false
-                // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  SnackBar(
-                    content: Text('Ошибка удаления: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
                 // ignore: use_build_context_synchronously
                 Navigator.of(dialogContext).pop(false);
               }
@@ -395,16 +384,7 @@ class _SpecializationDetailsPageState extends State<SpecializationDetailsPage> {
           _portfolioFileName = result.files.single.name;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка выбора файла: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    } catch (_) {}
   }
 
   void _removePortfolioFile() {
@@ -453,8 +433,8 @@ class _SpecializationDetailsPageState extends State<SpecializationDetailsPage> {
                       _buildSocialLinksFields(),
                       SizedBox(height: 24.h),
                       _buildSkillLevelSection(),
-                      SizedBox(height: 10.h),
-                      _buildPortfolioSection(),
+                      // SizedBox(height: 10.h),
+                      // _buildPortfolioSection(),
                       SizedBox(height: 32.h),
                       _buildDeleteButton(),
                       SizedBox(height: 32.h),
@@ -672,96 +652,96 @@ class _SpecializationDetailsPageState extends State<SpecializationDetailsPage> {
     );
   }
 
-  Widget _buildPortfolioSection() {
-    return _hasPortfolioFile
-        ? Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/svgs/checkbox_icon.svg',
-                      width: 24.w,
-                      height: 24.h,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      _portfolioFileName ?? 'Файл загружен',
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16.sp,
-                        color: const Color(0xFF353F49),
-                      ),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: _removePortfolioFile,
-                  child: Text(
-                    'удалить',
-                    style: TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 16.sp,
-                      color: const Color(0xFFF15656),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
-        : Container(
-            margin: EdgeInsets.only(left: 4.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Или ',
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 15.sp,
-                        color: AppColors.primaryText,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _pickPortfolioFile,
-                      child: Text(
-                        'загрузи файл',
-                        style: TextStyle(
-                          fontFamily: 'Ubuntu',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 15.sp,
-                          color: AppColors.blueAccent,
-                          decoration: TextDecoration.underline,
-                          decorationColor: AppColors.blueAccent,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      ' с портфолио',
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 15.sp,
-                        color: AppColors.primaryText,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-  }
+  // Widget _buildPortfolioSection() {
+  //   return _hasPortfolioFile
+  //       ? Container(
+  //           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(16.r),
+  //           ),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   SvgPicture.asset(
+  //                     'assets/svgs/checkbox_icon.svg',
+  //                     width: 24.w,
+  //                     height: 24.h,
+  //                   ),
+  //                   SizedBox(width: 4.w),
+  //                   Text(
+  //                     _portfolioFileName ?? 'Файл загружен',
+  //                     style: TextStyle(
+  //                       fontFamily: 'Ubuntu',
+  //                       fontWeight: FontWeight.w400,
+  //                       fontSize: 16.sp,
+  //                       color: const Color(0xFF353F49),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               GestureDetector(
+  //                 onTap: _removePortfolioFile,
+  //                 child: Text(
+  //                   'удалить',
+  //                   style: TextStyle(
+  //                     fontFamily: 'Ubuntu',
+  //                     fontWeight: FontWeight.w400,
+  //                     fontSize: 16.sp,
+  //                     color: const Color(0xFFF15656),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         )
+  //       : Container(
+  //           margin: EdgeInsets.only(left: 4.w),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   Text(
+  //                     'Или ',
+  //                     style: TextStyle(
+  //                       fontFamily: 'Ubuntu',
+  //                       fontWeight: FontWeight.w400,
+  //                       fontSize: 15.sp,
+  //                       color: AppColors.primaryText,
+  //                     ),
+  //                   ),
+  //                   GestureDetector(
+  //                     onTap: _pickPortfolioFile,
+  //                     child: Text(
+  //                       'загрузи файл',
+  //                       style: TextStyle(
+  //                         fontFamily: 'Ubuntu',
+  //                         fontWeight: FontWeight.w500,
+  //                         fontSize: 15.sp,
+  //                         color: AppColors.blueAccent,
+  //                         decoration: TextDecoration.underline,
+  //                         decorationColor: AppColors.blueAccent,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   Text(
+  //                     ' с портфолио',
+  //                     style: TextStyle(
+  //                       fontFamily: 'Ubuntu',
+  //                       fontWeight: FontWeight.w400,
+  //                       fontSize: 15.sp,
+  //                       color: AppColors.primaryText,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  // }
 
   Widget _buildDeleteButton() {
     return GestureDetector(

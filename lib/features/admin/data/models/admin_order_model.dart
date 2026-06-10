@@ -167,6 +167,8 @@ class AdminOrderColleagueModel {
   final String? rateUnit;
   final String? status;
   final String? avatarUrl;
+  final String? userId;
+  final bool hasAvatar;
 
   const AdminOrderColleagueModel({
     required this.id,
@@ -178,6 +180,8 @@ class AdminOrderColleagueModel {
     required this.rateUnit,
     required this.status,
     required this.avatarUrl,
+    required this.userId,
+    required this.hasAvatar,
   });
 
   factory AdminOrderColleagueModel.fromJson(Map<String, dynamic> json) {
@@ -198,6 +202,13 @@ class AdminOrderColleagueModel {
           json['rateType'] as String?,
       status: json['status'] as String?,
       avatarUrl: json['avatar_url'] as String? ?? json['avatar'] as String?,
+      userId:
+          json['user_id'] as String? ??
+          json['id'] as String? ??
+          json['colleague_id'] as String?,
+      hasAvatar:
+          json['has_avatar'] as bool? ??
+          ((json['avatar_url'] as String?)?.isNotEmpty ?? false),
     );
   }
 

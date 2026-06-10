@@ -17,6 +17,7 @@ class FreelancerModel {
   final Map<String, String>? portfolioLinks;
   final String? avatarUrl;
   final String? bio;
+  final bool hasAvatar;
   final bool hasResume;
   final String? resumeFilename;
   final DateTime? resumeUploadedAt;
@@ -41,6 +42,7 @@ class FreelancerModel {
     this.portfolioLinks,
     this.avatarUrl,
     this.bio,
+    this.hasAvatar = false,
     this.hasResume = false,
     this.resumeFilename,
     this.resumeUploadedAt,
@@ -125,6 +127,9 @@ class FreelancerModel {
           : null,
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
+      hasAvatar:
+          json['has_avatar'] as bool? ??
+          ((json['avatar_url'] as String?)?.isNotEmpty ?? false),
       hasResume: json['has_resume'] as bool? ?? false,
       resumeFilename: json['resume_filename'] as String?,
       resumeUploadedAt: json['resume_uploaded_at'] != null
@@ -155,6 +160,7 @@ class FreelancerModel {
       if (portfolioLinks != null) 'portfolio_links': portfolioLinks,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (bio != null) 'bio': bio,
+      'has_avatar': hasAvatar,
       'has_resume': hasResume,
       if (resumeFilename != null) 'resume_filename': resumeFilename,
       if (resumeUploadedAt != null)

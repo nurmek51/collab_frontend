@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/callback_state_manager.dart';
 import '../di/service_locator.dart';
+import '../utils/help_request_utils.dart';
 
 /// Manager for callback button state and debouncing
 class CallbackButtonManager extends ChangeNotifier {
@@ -25,7 +26,7 @@ class CallbackButtonManager extends ChangeNotifier {
   /// Request callback with debouncing and timeout protection
   Future<void> requestCallback({
     required VoidCallback onSuccess,
-    required Function(String) onError,
+    required void Function(Object error) onError,
     String? idempotencyToken,
   }) async {
     // Prevent multiple simultaneous requests
@@ -41,8 +42,9 @@ class CallbackButtonManager extends ChangeNotifier {
       _timeoutTimer = Timer(_timeoutDuration, () {
         if (_isPending) {
           _setPending(false);
-          _setError('Таймаут запроса');
-          onError('Таймаут запроса. Попробуйте еще раз.');
+          const timeoutError = 'Таймаут запроса. Попробуйте еще раз.';
+          _setError(timeoutError);
+          onError(Exception(timeoutError));
         }
       });
 
@@ -57,12 +59,11 @@ class CallbackButtonManager extends ChangeNotifier {
         _setPending(false);
         onSuccess();
       }
-    } catch (e) {
+    } catch (error) {
       _timeoutTimer?.cancel();
       _setPending(false);
-      final errorMessage = 'Ошибка при заказе звонка: $e';
-      _setError(errorMessage);
-      onError(errorMessage);
+      _setError(HelpRequestUtils.messageFor(error));
+      onError(error);
     }
   }
 

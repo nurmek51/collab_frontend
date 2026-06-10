@@ -90,12 +90,6 @@ class _EnhancedCompanyFieldState extends State<EnhancedCompanyField> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Не удалось загрузить компании: $e'),
-            backgroundColor: Colors.orange,
-          ),
-        );
       }
     }
   }

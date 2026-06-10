@@ -419,25 +419,7 @@ class _OtpPageState extends State<OtpPage> {
 
       // Restart timer
       _startResendTimer();
-
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Code sent successfully'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to resend code: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    } catch (_) {}
   }
 
   Future<void> _handleHelpRequest() async {

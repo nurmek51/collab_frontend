@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 // Conditional import for web-only code
 import 'core/utils/url_strategy_stub.dart'
     if (dart.library.html) 'core/utils/url_strategy_web.dart';
+import 'core/utils/webview_platform_init_stub.dart'
+    if (dart.library.html) 'core/utils/webview_platform_init_web.dart';
 
 // Core
 import 'core/theme/app_theme.dart';
@@ -19,6 +21,7 @@ void main() async {
 
   // Configure URL strategy (no-op on mobile platforms)
   configureUrlStrategy();
+  initWebViewPlatform();
 
   try {
     await Firebase.initializeApp();

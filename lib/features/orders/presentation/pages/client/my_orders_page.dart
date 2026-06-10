@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,6 +19,7 @@ import '../../widgets/client/callback_requested_state.dart';
 import '../../widgets/client/profile_popup_menu.dart';
 import '../../../../../shared/di/service_locator.dart';
 import '../../../../../shared/utils/help_utils.dart';
+import '../../../../../shared/utils/help_request_utils.dart';
 import '../../../../../shared/services/callback_button_manager.dart';
 import '../../../../../shared/state/orders_state_manager.dart';
 
@@ -64,18 +64,6 @@ class _MyOrdersPageState extends State<MyOrdersPage>
       });
 
       // Show user-friendly error message for timeouts
-      if (_ordersStateManager.error != null &&
-          _ordersStateManager.error!.contains('timeout')) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        // const SnackBar(
-        //   content: Text(
-        //     'Не удалось загрузить заказы. Проверьте подключение к интернету и попробуйте еще раз.',
-        //   ),
-        //   backgroundColor: Colors.orange,
-        //   duration: Duration(seconds: 5),
-        // ),
-        // );
-      }
     }
   }
 
@@ -104,61 +92,56 @@ class _MyOrdersPageState extends State<MyOrdersPage>
           context.push('/callback-accepted');
         }
       },
-      onError: (errorMessage) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-          );
-        }
+      onError: (error) {
+        if (!mounted || !HelpRequestUtils.shouldShowDialog(error)) return;
+        HelpRequestUtils.showErrorDialog(context, error);
       },
     );
   }
 
-  Future<void> _loadOrders() async {
-    await _ordersStateManager.refreshOrders(() async {
-      final fetchedOrders = await _getMyOrdersUseCase();
+  Future<List<Order>> _fetchAndSortOrders() async {
+    final fetchedOrders = await _getMyOrdersUseCase();
 
-      // Debug logging to trace order loading
-      debugPrint('📦 [MyOrdersPage] Fetched ${fetchedOrders.length} orders:');
-      for (final order in fetchedOrders) {
-        debugPrint(
-          '  - Order: ${order.title}, status: ${order.status}, hasContracts: ${order.hasContracts}, contracts: ${order.contracts}',
-        );
-      }
+    fetchedOrders.sort((a, b) {
+      if (a.status == 'approved' && b.status != 'approved') return -1;
+      if (a.status != 'approved' && b.status == 'approved') return 1;
 
-      // Sort orders: active (approved) orders first, then callback orders, then pending orders
-      fetchedOrders.sort((a, b) {
-        // Approved orders always first
-        if (a.status == 'approved' && b.status != 'approved') return -1;
-        if (a.status != 'approved' && b.status == 'approved') return 1;
+      final aIsCallback = a.title == 'Admin Help Request';
+      final bIsCallback = b.title == 'Admin Help Request';
 
-        // If both are approved or both are not approved, prioritize callback orders
-        bool aIsCallback = a.title == 'Admin Help Request';
-        bool bIsCallback = b.title == 'Admin Help Request';
+      if (aIsCallback && !bIsCallback) return -1;
+      if (!aIsCallback && bIsCallback) return 1;
 
-        if (aIsCallback && !bIsCallback) return -1;
-        if (!aIsCallback && bIsCallback) return 1;
-
-        return 0; // Keep original order for same type
-      });
-      return fetchedOrders;
+      return 0;
     });
+
+    return fetchedOrders;
+  }
+
+  Future<void> _loadOrders() async {
+    await _ordersStateManager.refreshOrders(_fetchAndSortOrders);
+  }
+
+  Future<void> _onPullToRefresh() async {
+    try {
+      final fetchedOrders = await _fetchAndSortOrders();
+      _ordersStateManager.setOrders(fetchedOrders);
+    } catch (e) {
+      _ordersStateManager.setError(e.toString());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final scrollableContent = _buildScrollView();
-
     return GradientBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: kIsWeb
-              ? scrollableContent
-              : RefreshIndicator(
-                  onRefresh: _loadOrders,
-                  child: scrollableContent,
-                ),
+          child: RefreshIndicator(
+            color: AppColors.blueAccent,
+            onRefresh: _onPullToRefresh,
+            child: _buildScrollView(),
+          ),
         ),
       ),
     );
@@ -272,7 +255,7 @@ class _MyOrdersPageState extends State<MyOrdersPage>
         children: [
           // Create order button
           SizedBox(
-            width: double.infinity,
+            width: 354.w,
             height: 52.h,
             child: ElevatedButton(
               onPressed: () {

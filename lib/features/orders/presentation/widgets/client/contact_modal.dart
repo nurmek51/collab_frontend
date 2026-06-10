@@ -5,6 +5,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../../../../shared/di/service_locator.dart';
+import '../../../../../shared/utils/help_request_utils.dart';
 import '../../../../../shared/utils/help_utils.dart';
 import '../../../data/models/order_details_model.dart';
 import '../../../data/models/company_model.dart';
@@ -119,19 +120,14 @@ class _ContactModalState extends State<ContactModal> {
         Navigator.of(context).pop();
         context.push('/callback-success');
       }
-    } catch (e) {
+    } catch (error) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при заказе: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (HelpRequestUtils.shouldShowDialog(error)) {
+          HelpRequestUtils.showErrorDialog(context, error);
+        }
       }
     }
   }

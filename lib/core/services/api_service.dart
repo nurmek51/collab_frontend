@@ -3,6 +3,7 @@ import 'token_manager.dart';
 import 'http_interceptor.dart';
 import 'background_refresh_manager.dart';
 import '../config/app_config.dart';
+import '../../shared/utils/help_request_utils.dart';
 
 class ApiService {
   static String get baseUrl => AppConfig.baseUrl;
@@ -415,9 +416,36 @@ class ApiService {
         if (clientId != null) 'client_id': clientId,
       };
 
-      final response = await _dio.post('/request-help', data: requestData);
-      return response.data as Map<String, dynamic>;
+      try {
+        final response = await _dio.post('/request-help', data: requestData);
+        final parsed = _parseHelpRequestResponse(response.data);
+        if (parsed == null) {
+          throw Exception('Invalid response from help request API');
+        }
+        return parsed;
+      } on DioException catch (error) {
+        final parsed = _parseHelpRequestResponse(error.response?.data);
+        if (parsed != null) {
+          return parsed;
+        }
+        rethrow;
+      }
     });
+  }
+
+  Map<String, dynamic>? _parseHelpRequestResponse(dynamic responseData) {
+    if (responseData is! Map<String, dynamic>) {
+      return null;
+    }
+
+    if (responseData['success'] == false) {
+      final error = responseData['error']?.toString() ?? '';
+      throw HelpRequestException(
+        error.isNotEmpty ? error : 'Help request failed',
+      );
+    }
+
+    return responseData;
   }
 
   String _handleDioError(DioException error) {

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/navigation/app_router.dart';
 import '../../../../core/constants/specialization_constants.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/admin_api.dart';
@@ -11,6 +8,8 @@ import '../../../../shared/api/auth_api.dart';
 import '../../../../shared/api/client.dart';
 import '../../../../shared/utils/deep_link_utils.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
+import '../widgets/admin_top_bar.dart';
+import '../../../../shared/widgets/user_avatar.dart';
 
 class AdminFreelancersPage extends StatefulWidget {
   const AdminFreelancersPage({super.key});
@@ -137,13 +136,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Фрилансер успешно одобрен'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
       // Remove from list and reload
       await _loadFreelancers();
     } catch (error) {
@@ -152,10 +144,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
       setState(() {
         _processingActions[freelancerId] = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $error'), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -167,23 +155,8 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
       final result = await _adminApi.getFreelancerResumeDownloadUrl(
         freelancerId,
       );
-      final opened = await DeepLinkUtils.openDeepLink(result.downloadUrl);
-      if (!opened && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Не удалось открыть резюме'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (error) {
-      if (!mounted) return;
-      final message = error is ApiException
-          ? error.message
-          : error.toString();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
+      await DeepLinkUtils.openDeepLink(result.downloadUrl);
+    } catch (_) {
     } finally {
       if (mounted) {
         setState(() => _viewingResume[freelancerId] = false);
@@ -230,13 +203,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Фрилансер отклонен'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-
       // Remove from list and reload
       await _loadFreelancers();
     } catch (error) {
@@ -245,10 +211,6 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
       setState(() {
         _processingActions[freelancerId] = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $error'), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -290,88 +252,10 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
   }
 
   Widget _buildTopBar() {
-    final displayName = _userDisplayName ?? 'Администратор';
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromRGBO(0, 0, 0, 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Row(
-              children: [
-                SvgPicture.asset('assets/svgs/collab_logo.svg', height: 28),
-                const SizedBox(width: 40),
-                GestureDetector(
-                  onTap: () => context.go(AppRouter.adminRoute),
-                  child: _buildTopNavItem('Проекты', active: false),
-                ),
-                const SizedBox(width: 24),
-                _buildTopNavItem('Заказчики'),
-                const SizedBox(width: 24),
-                _buildTopNavItem('Исполнители', active: true),
-                const Spacer(),
-                Row(
-                  children: [
-                    Text(
-                      displayName,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 15,
-                        color: AppColors.adminPrimaryText,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: () async {
-                        await _authApi.logout();
-                        if (mounted) {
-                          context.go(AppRouter.adminLoginRoute);
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        foregroundColor: AppColors.adminAccentBlue,
-                        textStyle: const TextStyle(
-                          fontFamily: 'Ubuntu',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                      child: const Text('выйти'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopNavItem(String label, {bool active = false}) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-        fontSize: 16,
-        color: active
-            ? AppColors.adminPrimaryText
-            : AppColors.adminSecondaryText,
-      ),
+    return AdminTopBar(
+      displayName: _userDisplayName ?? 'Администратор',
+      activeSection: AdminTopNavSection.freelancers,
+      authApi: _authApi,
     );
   }
 
@@ -627,25 +511,12 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
   Widget _buildFreelancerHeader(FreelancerModel freelancer) {
     return Row(
       children: [
-        // Avatar
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.grey[300],
-          ),
-          child: ClipOval(
-            child:
-                freelancer.avatarUrl != null && freelancer.avatarUrl!.isNotEmpty
-                ? Image.network(
-                    freelancer.avatarUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _buildAvatarFallback(freelancer.fullName),
-                  )
-                : _buildAvatarFallback(freelancer.fullName),
-          ),
+        UserAvatar(
+          userId: freelancer.userId,
+          hasAvatar: freelancer.hasAvatar,
+          name: freelancer.name,
+          surname: freelancer.surname,
+          size: 100,
         ),
         const SizedBox(width: 24),
         // Name and status
@@ -799,7 +670,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
     final isViewing = _viewingResume[freelancer.freelancerId] ?? false;
 
     return _AdminCard(
-      title: 'Резюме',
+      title: 'Портфолио',
       child: freelancer.hasResume
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -830,7 +701,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
                           ),
                         )
                       : const Icon(Icons.description_outlined, size: 20),
-                  label: Text(isViewing ? 'Открытие...' : 'Просмотреть резюме'),
+                  label: Text(isViewing ? 'Открытие...' : 'Просмотреть Портфолио'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.adminAccentBlue,
                     foregroundColor: Colors.white,
@@ -851,7 +722,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
               ],
             )
           : Text(
-              'Резюме не загружено',
+              'Портфолио не загружено',
               style: TextStyle(
                 fontFamily: 'Ubuntu',
                 fontWeight: FontWeight.w400,
@@ -1171,26 +1042,12 @@ class _FreelancerSidebarItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Small avatar
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[300],
-                ),
-                child: ClipOval(
-                  child:
-                      freelancer.avatarUrl != null &&
-                          freelancer.avatarUrl!.isNotEmpty
-                      ? Image.network(
-                          freelancer.avatarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildSmallAvatarFallback(freelancer.fullName),
-                        )
-                      : _buildSmallAvatarFallback(freelancer.fullName),
-                ),
+              UserAvatar(
+                userId: freelancer.userId,
+                hasAvatar: freelancer.hasAvatar,
+                name: freelancer.name,
+                surname: freelancer.surname,
+                size: 44,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1232,7 +1089,7 @@ class _FreelancerSidebarItem extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'Резюме',
+                          'Портфолио',
                           style: TextStyle(
                             fontFamily: 'Ubuntu',
                             fontWeight: FontWeight.w600,

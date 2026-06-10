@@ -10,7 +10,6 @@ import '../../../../core/constants/specialization_constants.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/state/freelancer_onboarding_state.dart';
 import '../../../../shared/services/freelancer_onboarding_service.dart';
-import '../../../../shared/api/client.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/utils/resume_file_utils.dart';
@@ -145,24 +144,6 @@ class _ExperiencePageState extends State<ExperiencePage> {
     } catch (_) {}
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : null,
-      ),
-    );
-  }
-
-  String _apiErrorMessage(Object error) {
-    if (error is ApiException) {
-      if (error.statusCode == 403) return 'Недостаточно прав';
-      return error.message;
-    }
-    return error.toString();
-  }
-
   Future<void> _persistInputs() async {
     final currentState = await _service.getCurrentState();
     final updatedState = currentState.copyWith(
@@ -249,10 +230,6 @@ class _ExperiencePageState extends State<ExperiencePage> {
       final bytes = file.bytes;
 
       if (bytes == null) {
-        _showSnackBar(
-          'Не удалось прочитать файл, выберите другой.',
-          isError: true,
-        );
         return;
       }
 
@@ -261,7 +238,6 @@ class _ExperiencePageState extends State<ExperiencePage> {
         fileSize: bytes.length,
       );
       if (validationError != null) {
-        _showSnackBar(validationError, isError: true);
         return;
       }
 
@@ -292,14 +268,12 @@ class _ExperiencePageState extends State<ExperiencePage> {
       });
       await _service.updateState(_currentState);
       await _refreshResumeFromProfile();
-      _showSnackBar('Файл успешно загружен');
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _isUploadingResume = false;
         _uploadProgress = 0;
       });
-      _showSnackBar(_apiErrorMessage(error), isError: true);
     }
   }
 
@@ -341,11 +315,9 @@ class _ExperiencePageState extends State<ExperiencePage> {
         _isDeletingResume = false;
       });
       await _service.updateState(_currentState);
-      _showSnackBar('Файл удалён');
     } catch (error) {
       if (!mounted) return;
       setState(() => _isDeletingResume = false);
-      _showSnackBar(_apiErrorMessage(error), isError: true);
     }
   }
 

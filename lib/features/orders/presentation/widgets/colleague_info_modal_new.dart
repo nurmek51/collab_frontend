@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../shared/widgets/user_avatar.dart';
 import '../../data/models/freelancer_model.dart';
 import '../../data/models/order_details_model.dart';
 
@@ -66,27 +67,15 @@ class ColleagueInfoModal extends StatelessWidget {
             ),
           ),
 
-          // Profile image
           Positioned(
             top: 117.5.h,
             left: 122.5.w,
-            child: Container(
-              width: 150.w,
-              height: 150.h,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFD9D9D9),
-              ),
-              child: ClipOval(
-                child: colleague.avatarUrl != null
-                    ? Image.network(
-                        colleague.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildDefaultAvatar(),
-                      )
-                    : _buildDefaultAvatar(),
-              ),
+            child: UserAvatar(
+              userId: colleague.userId,
+              hasAvatar: colleague.hasAvatar,
+              name: colleague.name,
+              surname: colleague.surname,
+              size: 150.w,
             ),
           ),
 
@@ -278,13 +267,6 @@ class ColleagueInfoModal extends StatelessWidget {
           // ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDefaultAvatar() {
-    return Container(
-      color: const Color(0xFFD9D9D9),
-      child: Icon(Icons.person, size: 75.w, color: AppColors.primaryText),
     );
   }
 

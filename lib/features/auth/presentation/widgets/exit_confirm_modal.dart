@@ -35,15 +35,6 @@ class _ExitConfirmModalState extends State<ExitConfirmModal> {
       setState(() {
         _isLoading = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при выходе: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 

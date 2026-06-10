@@ -145,16 +145,6 @@ class _SpecializationsPageState extends State<SpecializationsPage>
       } else {
         // Select: check limit and add
         if (_selectedSpecializations.length >= 5) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Можно выбрать максимум 5 специализаций',
-                style: TextStyle(fontFamily: 'Ubuntu', fontSize: 14.sp),
-              ),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 2),
-            ),
-          );
           return;
         }
         _selectedSpecializations.add(

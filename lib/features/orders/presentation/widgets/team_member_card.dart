@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/specialization_constants.dart';
+import '../../../../shared/widgets/user_avatar.dart';
 import '../../domain/entities/team_member.dart';
-import 'colleague_info_modal_new.dart';
 
 /// Widget displaying team member information card
 class TeamMemberCard extends StatelessWidget {
@@ -26,17 +25,11 @@ class TeamMemberCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar
-            Container(
-              width: 51.w,
-              height: 51.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.lightGrayBackground,
-              ),
-              child: teamMember.avatarUrl != null
-                  ? ClipOval(child: _getAvatarImage())
-                  : const Icon(Icons.person, color: AppColors.profileIconColor),
+            UserAvatar(
+              userId: teamMember.id,
+              hasAvatar: teamMember.hasAvatar,
+              fallbackName: teamMember.name,
+              size: 51.w,
             ),
 
             SizedBox(width: 16.w),
@@ -94,23 +87,4 @@ class TeamMemberCard extends StatelessWidget {
     );
   }
 
-  Widget _getAvatarImage() {
-    // Map team member names to local assets
-    switch (teamMember.name) {
-      case 'Ева Дева':
-        return Image.asset('assets/images/eva_avatar.png', fit: BoxFit.cover);
-      case 'Андрей Водолей':
-        return Image.asset(
-          'assets/images/andrey_avatar.png',
-          fit: BoxFit.cover,
-        );
-      case 'Антон Скорпион':
-        return Image.asset('assets/images/anton_avatar.png', fit: BoxFit.cover);
-      default:
-        return Container(
-          color: AppColors.lightGrayBackground,
-          child: const Icon(Icons.person, color: AppColors.profileIconColor),
-        );
-    }
-  }
 }

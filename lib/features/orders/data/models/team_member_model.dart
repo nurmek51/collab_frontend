@@ -8,6 +8,7 @@ class TeamMemberModel extends TeamMember {
     required super.role,
     required super.rate,
     super.avatarUrl,
+    super.hasAvatar,
   });
 
   /// Create TeamMemberModel from JSON
@@ -18,6 +19,9 @@ class TeamMemberModel extends TeamMember {
       role: json['role']?.toString() ?? '',
       rate: json['rate']?.toString() ?? '',
       avatarUrl: json['avatar_url']?.toString(),
+      hasAvatar:
+          json['has_avatar'] as bool? ??
+          ((json['avatar_url'] as String?)?.isNotEmpty ?? false),
     );
   }
 
@@ -29,6 +33,7 @@ class TeamMemberModel extends TeamMember {
       'role': role,
       'rate': rate,
       'avatar_url': avatarUrl,
+      'has_avatar': hasAvatar,
     };
   }
 
@@ -40,6 +45,7 @@ class TeamMemberModel extends TeamMember {
       role: teamMember.role,
       rate: teamMember.rate,
       avatarUrl: teamMember.avatarUrl,
+      hasAvatar: teamMember.hasAvatar,
     );
   }
 }

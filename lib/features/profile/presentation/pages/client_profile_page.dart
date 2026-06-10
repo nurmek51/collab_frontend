@@ -11,6 +11,7 @@ import '../../domain/usecases/update_client_profile.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/companies_api.dart';
 import '../../../../shared/api/auth_api.dart';
+import '../../../../shared/widgets/editable_profile_avatar.dart';
 import 'package:flutter/services.dart';
 
 /// Client Profile page for editing user profile information
@@ -30,6 +31,9 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _hasAvatar = false;
+  String _name = '';
+  String _surname = '';
 
   late final UpdateClientProfile _updateClientProfileUseCase;
   late final ApiService _apiService;
@@ -128,15 +132,17 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         }
       }
 
+      final avatarInfo = await _loadAvatarInfo();
+
       if (mounted) {
         setState(() {
-          // Populate combined full name
+          _name = profile.name;
+          _surname = profile.surname;
           _fullNameController.text = '${profile.name} ${profile.surname}'
               .trim();
           _phoneController.text = profile.phoneNumber;
-
           _companyController.text = companyName;
-
+          _hasAvatar = avatarInfo;
           _isLoading = false;
         });
       }
@@ -152,10 +158,12 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
         if (mounted) {
           setState(() {
+            _name = name;
+            _surname = surname;
             _fullNameController.text = '${name} ${surname}'.trim();
             _phoneController.text = phone;
-            // Company remains empty — user hasn't created a client profile/order yet
             _companyController.text = '';
+            _hasAvatar = user['has_avatar'] as bool? ?? false;
             _isLoading = false;
           });
         }
@@ -166,19 +174,20 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
           setState(() {
             _isLoading = false;
           });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ошибка загрузки профиля: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
         }
       }
     }
   }
 
-  // Helper to safely call getMyOrders and return a List<dynamic>
+  Future<bool> _loadAvatarInfo() async {
+    try {
+      final user = await sl<AuthApi>().getCurrentUser();
+      return user['has_avatar'] as bool? ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<dynamic>> _api_service_get_my_orders_safe() async {
     try {
       final orders = await _apiService.getMyOrders(limit: 1, offset: 0);
@@ -212,14 +221,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
       );
 
       if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Профиль успешно сохранен'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-
-        // Navigate back to My Orders
         context.pop();
       }
     } catch (e) {
@@ -227,13 +228,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         setState(() {
           _isSaving = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при сохранении: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -329,57 +323,13 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
                         SizedBox(height: 24.h),
 
-                        // Avatar with edit button (centered)
                         Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 120.r,
-                                height: 120.r,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.lightGrayBackground,
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 60.r,
-                                  color: AppColors.primaryText.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                ),
-                              ),
-                              // Edit icon positioned bottom-right
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    // TODO: implement avatar pick/upload
-                                  },
-                                  child: Container(
-                                    width: 36.w,
-                                    height: 36.w,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.inputBorderColor,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    padding: EdgeInsets.all(6.w),
-                                    child: SvgPicture.asset(
-                                      'assets/svgs/edit_icon_profile.svg',
-                                      colorFilter: ColorFilter.mode(
-                                        AppColors.primaryText,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          child: EditableProfileAvatar(
+                            hasAvatar: _hasAvatar,
+                            name: _name,
+                            surname: _surname,
+                            size: 120.r,
+                            onAvatarChanged: _loadProfile,
                           ),
                         ),
 
@@ -407,14 +357,6 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                               onTap: () {
                                 if (_companyController.text.trim().isEmpty) {
                                   HapticFeedback.heavyImpact();
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   const SnackBar(
-                                  //     content: Text(
-                                  //       'Сначала создайте заказ, затем вы сможете редактировать профиль.',
-                                  //     ),
-                                  //     backgroundColor: Colors.orange,
-                                  //   ),
-                                  // );
                                 }
                               },
                               validator: (value) {

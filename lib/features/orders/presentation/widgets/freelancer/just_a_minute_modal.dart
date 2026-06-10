@@ -94,13 +94,6 @@ class JustAMinuteModal extends StatelessWidget {
                         title: contract.title,
                         onTap: () {
                           // TODO: Handle contract tap - could show contract details
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Просмотр документа: ${contract.title}',
-                              ),
-                            ),
-                          );
                         },
                       ),
                     ],

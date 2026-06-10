@@ -5,6 +5,7 @@ class TeamMember {
   final String role;
   final String rate;
   final String? avatarUrl;
+  final bool hasAvatar;
 
   const TeamMember({
     required this.id,
@@ -12,6 +13,7 @@ class TeamMember {
     required this.role,
     required this.rate,
     this.avatarUrl,
+    this.hasAvatar = false,
   });
 
   @override
@@ -22,7 +24,8 @@ class TeamMember {
         other.name == name &&
         other.role == role &&
         other.rate == rate &&
-        other.avatarUrl == avatarUrl;
+        other.avatarUrl == avatarUrl &&
+        other.hasAvatar == hasAvatar;
   }
 
   @override
@@ -31,6 +34,7 @@ class TeamMember {
         name.hashCode ^
         role.hashCode ^
         rate.hashCode ^
-        avatarUrl.hashCode;
+        avatarUrl.hashCode ^
+        hasAvatar.hashCode;
   }
 }

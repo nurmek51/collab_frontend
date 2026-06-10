@@ -274,14 +274,6 @@ class _PhoneNumberPageState extends State<PhoneNumberPage> {
 
       // Show success message
       if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('OTP sent successfully'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-
-        // Navigate to OTP page
         context.pushNamed('otp', extra: normalizedPhone);
       }
     } catch (e) {

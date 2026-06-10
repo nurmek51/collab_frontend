@@ -17,6 +17,7 @@ import '../state/auth.dart';
 import '../state/freelancer_onboarding_state.dart';
 import '../state/orders_state_manager.dart';
 import '../services/freelancer_profile_status_manager.dart';
+import '../services/avatar_url_cache.dart';
 import '../services/freelancer_onboarding_service.dart';
 import '../services/freelancer_portfolio_storage_service.dart';
 import '../guards/auth_guard.dart';
@@ -115,6 +116,9 @@ Future<void> initializeDependencies() async {
   // Services
   sl.registerLazySingleton<FreelancerProfileStatusManager>(
     () => FreelancerProfileStatusManager(sl<FreelancerApi>(), sl<AuthStore>()),
+  );
+  sl.registerLazySingleton<AvatarUrlCache>(
+    () => AvatarUrlCache(sl<AuthApi>()),
   );
   sl.registerLazySingleton<FreelancerOnboardingService>(
     () => FreelancerOnboardingService(),

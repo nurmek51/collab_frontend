@@ -15,6 +15,11 @@ class FreelancerProfile {
   final String? email;
   final Map<String, String>? portfolioLinks;
   final Map<String, String>? socialLinks;
+  final bool hasResume;
+  final String? resumeFilename;
+  final DateTime? resumeUploadedAt;
+  final bool hasAvatar;
+  final DateTime? avatarUploadedAt;
 
   const FreelancerProfile({
     required this.id,
@@ -30,6 +35,11 @@ class FreelancerProfile {
     this.email,
     this.portfolioLinks,
     this.socialLinks,
+    this.hasResume = false,
+    this.resumeFilename,
+    this.resumeUploadedAt,
+    this.hasAvatar = false,
+    this.avatarUploadedAt,
   });
 
   /// Get full name

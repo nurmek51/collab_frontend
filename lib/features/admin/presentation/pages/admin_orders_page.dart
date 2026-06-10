@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/specialization_constants.dart';
-import '../../../../core/navigation/app_router.dart';
 import '../../data/repositories/admin_projects_repository.dart';
 import '../../data/models/admin_project_model.dart';
 import '../../data/models/admin_order_model.dart';
@@ -18,11 +15,12 @@ import '../../../../shared/api/companies_api.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/api/auth_api.dart';
 import '../../../../shared/api/applications_api.dart';
-import '../../../../shared/models/company_option.dart';
-import '../../../../shared/widgets/company_dropdown_field.dart';
+import '../widgets/admin_company_field.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
 import '../../../../features/orders/data/models/application_model.dart';
+import '../widgets/admin_top_bar.dart';
 import '../widgets/specialization_dialog.dart';
+import '../../../../shared/widgets/user_avatar.dart';
 
 class AdminOrdersPage extends StatefulWidget {
   const AdminOrdersPage({super.key});
@@ -59,6 +57,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   final Map<String, bool> _editingFields = {};
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, bool> _savingFields = {};
+  final Map<String, GlobalKey<AdminCompanyFieldState>> _companyFieldKeys = {};
 
   // Applied freelancers state
   final Map<String, FreelancerModel> _appliedFreelancers = {};
@@ -83,7 +82,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
 
   @override
   void dispose() {
-    // Dispose all text controllers
     for (final controller in _controllers.values) {
       controller.dispose();
     }
@@ -172,6 +170,12 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
 
       if (_projects.isNotEmpty) {
         _fetchApplications(_projects[_selectedIndex].order.id);
+        final project = _projects[_selectedIndex];
+        _initCompanyControllersForOrder(
+          project.order,
+          project.client,
+          _resolveCompany(project.order, project.client, project.company),
+        );
       }
     } catch (error) {
       if (!mounted) {
@@ -250,14 +254,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       _loadProjects();
     } catch (e) {
       debugPrint('Error updating application status: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка обновления статуса: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -502,12 +498,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       setState(() {
         _companiesLoading[clientId] = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Не удалось загрузить компании клиента: $error'),
-          backgroundColor: Colors.orange,
-        ),
-      );
     }
   }
 
@@ -549,6 +539,200 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     return fallback;
   }
 
+  String _companyTitleControllerKey(String orderId) => 'company_title_ctrl_$orderId';
+
+  String _companyTitleFieldKey(String orderId) => 'company_title_field_$orderId';
+
+  String _companySavingKey(String orderId) => 'companyName_$orderId';
+
+  GlobalKey<AdminCompanyFieldState> _companyFieldKey(String key) {
+    return _companyFieldKeys.putIfAbsent(key, GlobalKey.new);
+  }
+
+  String _companyDisplayName(
+    AdminOrderModel order,
+    AdminClientModel client,
+    AdminCompanyModel company,
+  ) {
+    if (company.companyName?.isNotEmpty == true) {
+      return company.companyName!;
+    }
+    return order.title ?? client.displayName;
+  }
+
+  TextEditingController _ensureCompanyController(String key, String text) {
+    final existing = _controllers[key];
+    if (existing != null) {
+      return existing;
+    }
+    final controller = TextEditingController(text: text);
+    _controllers[key] = controller;
+    return controller;
+  }
+
+  void _initCompanyControllersForOrder(
+    AdminOrderModel order,
+    AdminClientModel client,
+    AdminCompanyModel company,
+  ) {
+    final displayName = _companyDisplayName(order, client, company);
+    final key = _companyTitleControllerKey(order.id);
+    final existing = _controllers[key];
+    if (existing == null) {
+      _controllers[key] = TextEditingController(text: displayName);
+    } else {
+      existing.text = displayName;
+      existing.selection = TextSelection.collapsed(offset: displayName.length);
+    }
+  }
+
+  Future<void> _applyCompanyFromDropdown(
+    AdminOrderModel order,
+    AdminCompanyModel activeCompany,
+    AdminCompanyModel selected,
+  ) async {
+    final selectedName = selected.companyName?.trim() ?? '';
+    if (selectedName.isEmpty) {
+      return;
+    }
+
+    _companyFieldKeys[_companyTitleFieldKey(order.id)]
+        ?.currentState
+        ?.setTextSilently(selectedName);
+
+    final currentName = activeCompany.companyName?.trim() ?? '';
+    final isSameSelection =
+        selected.companyId == activeCompany.companyId &&
+        selectedName.toLowerCase() == currentName.toLowerCase();
+
+    setState(() {
+      if (selected.companyId.isNotEmpty) {
+        _selectedCompanyByOrder[order.id] = selected.companyId;
+      }
+      _overrideCompanyByOrder[order.id] = selected;
+    });
+
+    if (isSameSelection) {
+      return;
+    }
+
+    await _saveCompanyName(order, activeCompany, selectedName);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _overrideCompanyByOrder[order.id] = selected;
+    });
+  }
+
+  Future<void> _persistTypedCompanyName({
+    required AdminOrderModel order,
+    required AdminCompanyModel company,
+    required List<AdminCompanyModel> companies,
+    required String typedName,
+  }) async {
+    final trimmed = typedName.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    for (final item in companies) {
+      final name = item.companyName?.trim();
+      if (name != null &&
+          name.toLowerCase() == trimmed.toLowerCase() &&
+          _selectedCompanyByOrder[order.id] != item.companyId) {
+        await _applyCompanyFromDropdown(order, company, item);
+        return;
+      }
+    }
+
+    if (company.companyId.isEmpty || company.companyName?.trim() == trimmed) {
+      return;
+    }
+
+    await _saveCompanyName(order, company, trimmed);
+  }
+
+  Widget _buildAdminCompanyField({
+    required AdminOrderModel order,
+    required AdminClientModel client,
+    required AdminCompanyModel company,
+  }) {
+    final clientId = client.clientId;
+    final companies = _clientCompanies[clientId] ?? const <AdminCompanyModel>[];
+    final isLoading = _companiesLoading[clientId] ?? false;
+    final displayName = _companyDisplayName(order, client, company);
+    final controller = _ensureCompanyController(
+      _companyTitleControllerKey(order.id),
+      displayName,
+    );
+    final isSaving = _savingFields[_companySavingKey(order.id)] ?? false;
+
+    return AdminCompanyField(
+      key: _companyFieldKey(_companyTitleFieldKey(order.id)),
+      controller: controller,
+      companies: companies,
+      isLoading: isLoading,
+      selectedCompanyId: _selectedCompanyByOrder[order.id],
+      hintText: 'Название компании',
+      enabled: !isSaving,
+      onCompanySelected: (selected) => _applyCompanyFromDropdown(
+        order,
+        company,
+        selected,
+      ),
+      onFocusLost: () => _persistTypedCompanyName(
+        order: order,
+        company: company,
+        companies: companies,
+        typedName: controller.text,
+      ),
+    );
+  }
+
+  Widget _buildClientCompanyDisplay(
+    AdminOrderModel order,
+    AdminClientModel client,
+    AdminCompanyModel company,
+  ) {
+    final controller = _ensureCompanyController(
+      _companyTitleControllerKey(order.id),
+      _companyDisplayName(order, client, company),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Заказчик',
+          style: TextStyle(
+            fontFamily: 'Ubuntu',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: AppColors.adminSecondaryText.withValues(alpha: 0.9),
+          ),
+        ),
+        ListenableBuilder(
+          listenable: controller,
+          builder: (context, _) {
+            final text = controller.text.trim();
+            return Text(
+              text.isNotEmpty
+                  ? text
+                  : _companyDisplayName(order, client, company),
+              style: const TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w500,
+                fontSize: 17,
+                color: Color(0xFF2782E3),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   void _selectFilter(String filter) {
     if (_selectedFilter == filter) return;
 
@@ -574,8 +758,15 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     setState(() {
       _selectedIndex = index;
     });
-    _fetchCompaniesForClient(_projects[index].client.clientId);
-    _fetchApplications(_projects[index].order.id);
+    final project = _projects[index];
+    final company = _resolveCompany(
+      project.order,
+      project.client,
+      project.company,
+    );
+    _initCompanyControllersForOrder(project.order, project.client, company);
+    _fetchCompaniesForClient(project.client.clientId);
+    _fetchApplications(project.order.id);
   }
 
   void _toggleDescription(String orderId) {
@@ -625,15 +816,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       setState(() {
         _savingFields[fieldKey] = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка сохранения: ${error.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -656,28 +838,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       setState(() {
         _savingFields[fieldKey] = false;
       });
-
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text('Чат проекта успешно обновлен'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-      }
     } catch (error) {
       setState(() {
         _savingFields[fieldKey] = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка сохранения: ${error.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -732,22 +896,22 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           return p;
         }).toList();
 
-        _editingFields[fieldKey] = false;
         _savingFields[fieldKey] = false;
+        AdminClientModel? client;
+        for (final project in _projects) {
+          if (project.order.id == order.id) {
+            client = project.client;
+            break;
+          }
+        }
+        if (client != null) {
+          _initCompanyControllersForOrder(order, client, updatedCompany);
+        }
       });
     } catch (error) {
       setState(() {
         _savingFields[fieldKey] = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка сохранения: ${error.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -803,12 +967,6 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     _updateOrderInLocalState(order.id, response);
 
     if (!mounted) return;
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(
-    //     content: Text('Специализация успешно обновлена'),
-    //     backgroundColor: Colors.green,
-    //   ),
-    // );
   }
 
   void _openSpecializationModal({
@@ -908,88 +1066,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   }
 
   Widget _buildTopBar() {
-    final displayName = _userDisplayName ?? 'Администратор';
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromRGBO(0, 0, 0, 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Row(
-              children: [
-                SvgPicture.asset('assets/svgs/collab_logo.svg', height: 28),
-                const SizedBox(width: 40),
-                _buildTopNavItem('Проекты', active: true),
-                const SizedBox(width: 24),
-                _buildTopNavItem('Заказчики'),
-                const SizedBox(width: 24),
-                GestureDetector(
-                  onTap: () => context.go(AppRouter.adminFreelancersRoute),
-                  child: _buildTopNavItem('Исполнители'),
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    Text(
-                      displayName,
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 15,
-                        color: AppColors.adminPrimaryText,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: () async {
-                        await _authApi.logout();
-                        if (mounted) {
-                          context.go(AppRouter.adminLoginRoute);
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        foregroundColor: AppColors.adminAccentBlue,
-                        textStyle: const TextStyle(
-                          fontFamily: 'Ubuntu',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                      child: const Text('выйти'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopNavItem(String label, {bool active = false}) {
-    return Text(
-      label,
-      style: TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-        fontSize: 16,
-        color: active
-            ? AppColors.adminPrimaryText
-            : AppColors.adminSecondaryText,
-      ),
+    return AdminTopBar(
+      displayName: _userDisplayName ?? 'Администратор',
+      activeSection: AdminTopNavSection.projects,
+      authApi: _authApi,
     );
   }
 
@@ -1200,7 +1280,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProjectTitle(order, company),
+            _buildProjectTitle(order, client, baseCompany, company),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1298,154 +1378,35 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     );
   }
 
-  Widget _buildProjectTitle(AdminOrderModel order, AdminCompanyModel company) {
-    final fieldKey = 'companyName_${order.id}';
-    final isEditing = _editingFields[fieldKey] ?? false;
-    final isSaving = _savingFields[fieldKey] ?? false;
-    final companyName = company.companyName?.isNotEmpty == true
-        ? company.companyName!
-        : order.title ?? 'Проект';
-
-    if (isEditing) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFCADDE1), width: 1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextField(
-              controller: _controllers[fieldKey],
-              maxLines: 1,
-              style: const TextStyle(
-                fontFamily: 'Ubuntu',
-                fontWeight: FontWeight.w700,
-                fontSize: 28,
-                color: Color(0xFF353F49),
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                hintText: 'Название компании',
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 130,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0x0D000000),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextButton(
-                  onPressed: isSaving
-                      ? null
-                      : () => _cancelEditingField(fieldKey),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    foregroundColor: const Color(0xFF353F49),
-                    textStyle: const TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                  ),
-                  child: const Text('Отменить'),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 130,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextButton(
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          final newName = _controllers[fieldKey]?.text ?? '';
-                          _saveCompanyName(order, company, newName);
-                        },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(
-                      fontFamily: 'Ubuntu',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text('Сохранить'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
+  Widget _buildProjectTitle(
+    AdminOrderModel order,
+    AdminClientModel client,
+    AdminCompanyModel fallbackCompany,
+    AdminCompanyModel selectedCompany,
+  ) {
+    final isSaving = _savingFields[_companySavingKey(order.id)] ?? false;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: Text(
-            companyName,
-            style: TextStyle(
-              fontFamily: 'Ubuntu',
-              fontWeight: FontWeight.w700,
-              fontSize: 28,
-              color: AppColors.adminPrimaryText,
-            ),
+          child: _buildAdminCompanyField(
+            order: order,
+            client: client,
+            company: selectedCompany,
           ),
         ),
-        if (company.companyId.isNotEmpty)
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.adminAccentBlue.withAlpha(31),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.adminAccentBlue.withAlpha(51),
-                width: 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _startEditingField(fieldKey, companyName),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.edit,
-                    size: 18,
-                    color: AppColors.adminAccentBlue,
-                  ),
-                ),
-              ),
+        if (isSaving) ...[
+          const SizedBox(width: 12),
+          const Padding(
+            padding: EdgeInsets.only(top: 16),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
+        ],
       ],
     );
   }
@@ -1743,145 +1704,14 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     AdminCompanyModel fallbackCompany,
     AdminCompanyModel selectedCompany,
   ) {
-    final clientId = client.clientId;
-    final companies = _clientCompanies[clientId] ?? const <AdminCompanyModel>[];
-    final isLoading = _companiesLoading[clientId] ?? false;
-
-    final optionMap = <String, AdminCompanyModel>{};
-    for (final company in companies) {
-      final key = _companyKeyForOrder(company, order.id);
-      if (key != null) {
-        optionMap[key] = company;
-      }
-    }
-
-    final fallbackKey = _companyKeyForOrder(fallbackCompany, order.id);
-    if (fallbackKey != null && !optionMap.containsKey(fallbackKey)) {
-      optionMap[fallbackKey] = fallbackCompany;
-    }
-
-    final resolvedKey = _companyKeyForOrder(selectedCompany, order.id);
-    if (resolvedKey != null && !optionMap.containsKey(resolvedKey)) {
-      optionMap[resolvedKey] = selectedCompany;
-    }
-
-    final options =
-        optionMap.entries
-            .map(
-              (entry) => CompanyOption(
-                id: entry.key,
-                name: entry.value.companyName?.isNotEmpty == true
-                    ? entry.value.companyName!
-                    : client.displayName,
-                subtitle: entry.value.clientPosition,
-              ),
-            )
-            .toList()
-          ..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          );
-
-    final selectedId =
-        _selectedCompanyByOrder[order.id] ?? resolvedKey ?? fallbackKey;
-    final activeCompany =
-        selectedId != null && optionMap.containsKey(selectedId)
-        ? optionMap[selectedId]!
-        : selectedCompany;
-
-    final dropdownStyle = CompanyDropdownStyle(
-      labelPadding: EdgeInsets.zero,
-      labelStyle: TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w500,
-        fontSize: 14,
-        color: AppColors.adminSecondaryText.withOpacity(0.9),
-      ),
-      errorStyle: const TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w400,
-        fontSize: 12,
-        color: Colors.redAccent,
-      ),
-      fieldPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-      fieldBorderRadius: BorderRadius.circular(8),
-      fieldBorder: const Border(
-        bottom: BorderSide(color: Color(0x14353F49), width: 1),
-      ),
-      fieldBackgroundColor: Colors.transparent,
-      trailingIcon: const Icon(
-        Icons.expand_more,
-        size: 20,
-        color: Color(0xFF2782E3),
-      ),
-      valueStyle: const TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w500,
-        fontSize: 17,
-        color: Color(0xFF2782E3),
-      ),
-      placeholderStyle: const TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w400,
-        fontSize: 17,
-        color: Color(0xFFBCC5C7),
-      ),
-      dropdownPadding: const EdgeInsets.fromLTRB(20, 32, 16, 32),
-      dropdownBorderRadius: BorderRadius.circular(16),
-      dropdownShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 25,
-          offset: const Offset(0, 0),
-          spreadRadius: -5,
-        ),
-      ],
-      dropdownBackgroundColor: Colors.white,
-      dropdownItemStyle: const TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w400,
-        fontSize: 17,
-        color: Color(0xFF353F49),
-      ),
-      dropdownSelectedItemStyle: const TextStyle(
-        fontFamily: 'Ubuntu',
-        fontWeight: FontWeight.w500,
-        fontSize: 17,
-        color: Color(0xFF2782E3),
-      ),
-      dropdownSelectedIconColor: const Color(0xFF2782E3),
-      dropdownItemSpacing: 16,
-      overlayVerticalOffset: 12,
-      dropdownMaxHeight: 360,
-      dropdownWidth: 227,
-      dropdownOffset: Offset.zero,
-      fieldHeight: 36,
-    );
-
-    final displayName = activeCompany.companyName?.isNotEmpty == true
-        ? activeCompany.companyName!
-        : client.displayName;
-    final position = activeCompany.clientPosition ?? 'Контактное лицо';
+    final position =
+        selectedCompany.clientPosition ?? 'Контактное лицо';
     final phone = client.phoneNumber ?? 'Номер не указан';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CompanyDropdownField(
-          label: 'Заказчик',
-          options: options,
-          selectedOptionId: selectedId,
-          style: dropdownStyle,
-          isLoading: isLoading && options.isEmpty,
-          enabled: options.isNotEmpty,
-          onOptionSelected: (option) {
-            final selectedModel = optionMap[option.id] ?? activeCompany;
-            setState(() {
-              _selectedCompanyByOrder[order.id] = option.id;
-              _overrideCompanyByOrder[order.id] = selectedModel;
-            });
-          },
-          placeholder: displayName,
-        ),
+        _buildClientCompanyDisplay(order, client, selectedCompany),
         const SizedBox(height: 12),
         Text(
           client.displayName,
@@ -2468,26 +2298,13 @@ class _ParticipantCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Avatar
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[300],
-              ),
-              child: ClipOval(
-                child:
-                    colleague.avatarUrl != null &&
-                        colleague.avatarUrl!.isNotEmpty
-                    ? Image.network(
-                        colleague.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildAvatarFallback(name),
-                      )
-                    : _buildAvatarFallback(name),
-              ),
+            UserAvatar(
+              userId: colleague.userId,
+              hasAvatar: colleague.hasAvatar,
+              name: colleague.name,
+              surname: colleague.surname,
+              fallbackName: name,
+              size: 70,
             ),
             const SizedBox(height: 14),
             // Text content
@@ -2782,26 +2599,12 @@ class _AppliedFreelancerCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Avatar
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[300],
-              ),
-              child: ClipOval(
-                child:
-                    freelancer.avatarUrl != null &&
-                        freelancer.avatarUrl!.isNotEmpty
-                    ? Image.network(
-                        freelancer.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildAvatarFallback(freelancer.fullName),
-                      )
-                    : _buildAvatarFallback(freelancer.fullName),
-              ),
+            UserAvatar(
+              userId: freelancer.userId,
+              hasAvatar: freelancer.hasAvatar,
+              name: freelancer.name,
+              surname: freelancer.surname,
+              size: 70,
             ),
             const SizedBox(height: 14),
             // Text content
@@ -3003,25 +2806,12 @@ class _FreelancerDetailsDialog extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.grey[300],
-                    ),
-                    child: ClipOval(
-                      child:
-                          freelancer.avatarUrl != null &&
-                              freelancer.avatarUrl!.isNotEmpty
-                          ? Image.network(
-                              freelancer.avatarUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildAvatarFallback(),
-                            )
-                          : _buildAvatarFallback(),
-                    ),
+                  UserAvatar(
+                    userId: freelancer.userId,
+                    hasAvatar: freelancer.hasAvatar,
+                    name: freelancer.name,
+                    surname: freelancer.surname,
+                    size: 60,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -3233,25 +3023,12 @@ class _OccupiedSpecializationCard extends StatelessWidget {
             // Avatar with occupied indicator
             Stack(
               children: [
-                Container(
-                  width: 70,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey[300],
-                  ),
-                  child: ClipOval(
-                    child:
-                        freelancer.avatarUrl != null &&
-                            freelancer.avatarUrl!.isNotEmpty
-                        ? Image.network(
-                            freelancer.avatarUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildAvatarFallback(),
-                          )
-                        : _buildAvatarFallback(),
-                  ),
+                UserAvatar(
+                  userId: freelancer.userId,
+                  hasAvatar: freelancer.hasAvatar,
+                  name: freelancer.name,
+                  surname: freelancer.surname,
+                  size: 70,
                 ),
                 // Occupied indicator
                 Positioned(
@@ -3436,25 +3213,12 @@ class _OrderApplicationCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[200],
-                ),
-                child: ClipOval(
-                  child:
-                      freelancer!.avatarUrl != null &&
-                          freelancer!.avatarUrl!.isNotEmpty
-                      ? Image.network(
-                          freelancer!.avatarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildAvatarFallback(freelancer!.name),
-                        )
-                      : _buildAvatarFallback(freelancer!.name),
-                ),
+              UserAvatar(
+                userId: freelancer!.userId,
+                hasAvatar: freelancer!.hasAvatar,
+                name: freelancer!.name,
+                surname: freelancer!.surname,
+                size: 60,
               ),
               const SizedBox(width: 20),
               Expanded(

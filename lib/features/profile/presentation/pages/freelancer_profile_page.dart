@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../auth/presentation/widgets/gradient_background.dart';
@@ -15,6 +13,8 @@ import '../../../../shared/widgets/freelancer_flow_exports.dart';
 import '../../../auth/presentation/widgets/exit_confirm_modal.dart';
 import '../../../auth/domain/usecases/logout.dart';
 import '../../../../shared/services/freelancer_profile_status_manager.dart';
+import '../widgets/freelancer_resume_section.dart';
+import '../../../../shared/widgets/editable_profile_avatar.dart';
 
 /// Freelancer Profile page for viewing freelancer profile information
 class FreelancerProfilePage extends StatefulWidget {
@@ -29,13 +29,10 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
   bool _isLoading = true;
   FreelancerProfile? _profile;
   String? _errorMessage;
-  File? _selectedImage;
-  bool _isUploadingAvatar = false;
   bool _isLoggingOut = false;
 
   late final FreelancerApi _freelancerApi;
   late final Logout _logoutUseCase;
-  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -43,55 +40,6 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
     _freelancerApi = sl<FreelancerApi>();
     _logoutUseCase = sl<Logout>();
     _loadProfile();
-  }
-
-  Future<void> _pickAndUploadAvatar() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image == null) return;
-
-      setState(() {
-        _selectedImage = File(image.path);
-        _isUploadingAvatar = true;
-      });
-
-      // Here you would typically upload the image to your server
-      // and get back a URL. For now, we'll simulate this:
-
-      // TODO: Implement actual image upload to server
-      // For now, we'll just update the local state
-      await Future.delayed(const Duration(seconds: 2));
-
-      setState(() {
-        _isUploadingAvatar = false;
-      });
-
-      // Show success message
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(
-      //     content: Text('Фото профиля обновлено'),
-      //     backgroundColor: Colors.green,
-      //   ),
-      // );
-    } catch (e) {
-      setState(() {
-        _isUploadingAvatar = false;
-        _selectedImage = null;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка загрузки фото: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   Future<void> _handleLogout() async {
@@ -119,15 +67,6 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
       setState(() {
         _isLoggingOut = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при выходе: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -183,6 +122,15 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
                 ?.cast<String, String>(),
         socialLinks: (profileData['social_links'] as Map<String, dynamic>?)
             ?.cast<String, String>(),
+        hasResume: profileData['has_resume'] as bool? ?? false,
+        resumeFilename: profileData['resume_filename'] as String?,
+        resumeUploadedAt: profileData['resume_uploaded_at'] != null
+            ? DateTime.tryParse(profileData['resume_uploaded_at'].toString())
+            : null,
+        hasAvatar: profileData['has_avatar'] as bool? ?? false,
+        avatarUploadedAt: profileData['avatar_uploaded_at'] != null
+            ? DateTime.tryParse(profileData['avatar_uploaded_at'].toString())
+            : null,
       );
 
       setState(() {
@@ -318,81 +266,13 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
     return SingleChildScrollView(
       child: Column(
         children: [
-          SizedBox(height: 20.h), // Space to profile image
-          Stack(
-            children: [
-              GestureDetector(
-                onTap: _pickAndUploadAvatar,
-                child: Container(
-                  width: 120.w,
-                  height: 120.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.lightGrayBackground,
-                  ),
-                  child: _isUploadingAvatar
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(AppColors.black),
-                          ),
-                        )
-                      : _selectedImage != null
-                      ? ClipOval(
-                          child: Image.file(
-                            _selectedImage!,
-                            fit: BoxFit.cover,
-                            width: 120.w,
-                            height: 120.w,
-                          ),
-                        )
-                      : _profile?.email?.isNotEmpty == true
-                      ? ClipOval(
-                          child: Icon(
-                            Icons.person,
-                            size: 60.w,
-                            color: AppColors.primaryText.withValues(alpha: 0.5),
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 60.w,
-                          color: AppColors.primaryText.withValues(alpha: 0.5),
-                        ),
-                ),
-              ),
-
-              // Edit button - positioned exactly like Figma
-              Positioned(
-                right: 0,
-                bottom: 10.h,
-                child: GestureDetector(
-                  onTap: _pickAndUploadAvatar,
-                  child: Container(
-                    width: 30.w,
-                    height: 30.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFCADDE1),
-                        width: 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: SvgPicture.asset(
-                        'assets/svgs/edit_icon_profile.svg',
-                        width: 14.17.w,
-                        height: 14.17.w,
-                        colorFilter: ColorFilter.mode(
-                          AppColors.black,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          SizedBox(height: 20.h),
+          EditableProfileAvatar(
+            hasAvatar: _profile?.hasAvatar ?? false,
+            name: _profile?.name,
+            surname: _profile?.surname,
+            size: 120.w,
+            onAvatarChanged: _loadProfile,
           ),
 
           SizedBox(height: 46.h), // Space to menu items
@@ -436,6 +316,12 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
                   onTap: () {
                     // TODO: Navigate to contact details page
                   },
+                ),
+                SizedBox(height: 16.h),
+                FreelancerResumeSection(
+                  hasResume: _profile?.hasResume ?? false,
+                  resumeFilename: _profile?.resumeFilename,
+                  onResumeChanged: _loadProfile,
                 ),
                 SizedBox(height: 16.h),
                 // Commented out for freelancers - only show when user role and permission require them

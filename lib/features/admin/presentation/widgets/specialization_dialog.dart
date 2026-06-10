@@ -67,13 +67,6 @@ class _AddOrderSpecializationModalState
       setState(() {
         _isSaving = false;
       });
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      messenger?.showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 

@@ -22,6 +22,7 @@ import '../../../data/models/vacancy_application_models.dart';
 // import '../../widgets/freelancer/just_a_minute_modal.dart';
 import '../../widgets/colleague_info_modal_new.dart';
 import '../../../../../core/navigation/app_router.dart';
+import '../../../../../shared/widgets/user_avatar.dart';
 
 import '../../../../../core/constants/specialization_constants.dart';
 
@@ -872,7 +873,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
     // Check if we have freelancer_id
     if (freelancerId == null || freelancerId!.isEmpty) {
-      _showErrorSnackBar('Не удалось получить ID профиля фрилансера');
       return;
     }
 
@@ -892,11 +892,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         );
 
         if (!eligibility.eligible) {
-          if (mounted) {
-            _showErrorSnackBar(
-              'Не удается подать заявку: ${eligibility.reason}',
-            );
-          }
           return;
         }
       } catch (e) {
@@ -918,27 +913,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         // Navigate to callback success page
         context.go(AppRouter.callbackSuccessRoute);
       }
-    } catch (e) {
-      if (mounted) {
-        String errorMessage = 'Произошла ошибка: ${e.toString()}';
-
-        // Handle specific error cases from the API documentation
-        if (e.toString().contains('409') || e.toString().contains('Conflict')) {
-          errorMessage =
-              'Эта вакансия была только что занята — пожалуйста, выберите другую специализацию.';
-          // Optionally refresh available specializations here
-        } else if (e.toString().contains('404') ||
-            e.toString().contains('NotFound')) {
-          errorMessage =
-              'Заказ или профиль не найден. Пожалуйста, попробуйте еще раз или обратитесь в службу поддержки.';
-        } else if (e.toString().contains('400') ||
-            e.toString().contains('BadRequest')) {
-          errorMessage =
-              'Недопустимый запрос. Пожалуйста, обновите страницу и попробуйте еще раз.';
-        }
-
-        _showErrorSnackBar(errorMessage);
-      }
+    } catch (_) {
     } finally {
       if (mounted) {
         setState(() {
@@ -946,12 +921,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         });
       }
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
   }
 
   bool _needsExpansion(String text) {
@@ -1135,30 +1104,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 51.w,
-              height: 51.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFD9D9D9),
-              ),
-              child: colleague.avatarUrl != null
-                  ? ClipOval(
-                      child: Image.network(
-                        colleague.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.person,
-                          size: 25.w,
-                          color: AppColors.primaryText,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.person,
-                      size: 25.w,
-                      color: AppColors.primaryText,
-                    ),
+            UserAvatar(
+              userId: colleague.userId,
+              hasAvatar: colleague.hasAvatar,
+              name: colleague.name,
+              surname: colleague.surname,
+              size: 51.w,
             ),
             SizedBox(width: 16.w),
             Expanded(
