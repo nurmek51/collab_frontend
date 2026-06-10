@@ -146,6 +146,26 @@ class ApiClient {
     }
   }
 
+  /// POST multipart/form-data request with envelope parsing
+  Future<T> postMultipart<T>(
+    String path, {
+    required FormData data,
+    T Function(dynamic)? fromJson,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    try {
+      final response = await _dio.post(
+        path,
+        data: data,
+        options: Options(contentType: 'multipart/form-data'),
+        onSendProgress: onSendProgress,
+      );
+      return _handleResponse<T>(response, fromJson);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   /// Generic PUT request with envelope parsing
   Future<T> put<T>(
     String path, {

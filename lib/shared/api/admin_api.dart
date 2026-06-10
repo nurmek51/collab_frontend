@@ -1,4 +1,5 @@
 import 'client.dart';
+import 'resume_models.dart';
 
 class AdminApi {
   final ApiClient _client;
@@ -83,6 +84,16 @@ class AdminApi {
       '/admin/freelancers/$freelancerId/approve',
       data: {'status': status},
       fromJson: (data) => data as Map<String, dynamic>,
+    );
+  }
+
+  Future<ResumeDownloadResult> getFreelancerResumeDownloadUrl(
+    String freelancerId,
+  ) async {
+    return _client.get<ResumeDownloadResult>(
+      '/admin/freelancers/$freelancerId/resume',
+      fromJson: (data) =>
+          ResumeDownloadResult.fromJson(data as Map<String, dynamic>),
     );
   }
 }

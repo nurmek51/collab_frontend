@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../shared/utils/help_utils.dart';
-import '../../../../shared/services/freelancer_profile_status_manager.dart';
 import '../../../../shared/di/service_locator.dart';
+import '../../../../shared/guards/freelancer_profile_guard.dart';
+import '../../../../shared/services/freelancer_profile_status_manager.dart';
+import '../../../../shared/state/auth.dart';
+import '../../../../shared/utils/help_utils.dart';
 import '../widgets/gradient_background.dart';
 
 class SuccessPage extends StatefulWidget {
@@ -14,10 +19,64 @@ class SuccessPage extends StatefulWidget {
   State<SuccessPage> createState() => _SuccessPageState();
 }
 
-class _SuccessPageState extends State<SuccessPage> {
+class _SuccessPageState extends State<SuccessPage> with WidgetsBindingObserver {
+  Timer? _statusPollTimer;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _syncRouteWithProfileStatus();
+    _statusPollTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _syncRouteWithProfileStatus(),
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _statusPollTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncRouteWithProfileStatus();
+    }
+  }
+
+  Future<void> _syncRouteWithProfileStatus() async {
+    final authStore = sl<AuthStore>();
+    if (!await authStore.isAuthenticated()) {
+      if (mounted) context.go('/');
+      return;
+    }
+
+    final role = await authStore.getRole();
+    if (role != 'freelancer') {
+      if (mounted) context.go('/');
+      return;
+    }
+
+    final statusManager = sl<FreelancerProfileStatusManager>();
+    final status = await statusManager.getProfileStatusFresh();
+    if (!mounted) return;
+
+    switch (status) {
+      case 'approved':
+        context.go(AppRouter.myWorkRoute);
+        return;
+      case 'pending':
+        return;
+      default:
+        final redirect = await sl<FreelancerProfileGuard>().getRequiredRedirect();
+        if (!mounted || redirect == null || redirect == AppRouter.successRoute) {
+          return;
+        }
+        context.go(redirect);
+    }
   }
 
   @override
@@ -29,35 +88,21 @@ class _SuccessPageState extends State<SuccessPage> {
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               children: [
-                // Main content
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Success illustration
                       _buildSuccessIllustration(),
-
                       SizedBox(height: 23.h),
-
-                      // Main heading
                       _buildMainHeading(),
-
                       SizedBox(height: 23.h),
-
-                      // Description text
                       _buildDescriptionText(),
-
                       SizedBox(height: 42.h),
-
-                      // Fix data button
                       _buildFixDataButton(context),
                     ],
                   ),
                 ),
-
-                // Help button at bottom
                 _buildHelpButton(),
-
                 SizedBox(height: 49.h),
               ],
             ),
@@ -144,40 +189,24 @@ class _SuccessPageState extends State<SuccessPage> {
   }
 
   Future<void> _handleFixData(BuildContext context) async {
-    // Check current profile status before allowing edit (use fresh data)
+    if (!mounted) return;
+
     try {
       final statusManager = sl<FreelancerProfileStatusManager>();
       final status = await statusManager.getProfileStatusFresh();
 
-      // Only allow editing if status is pending, rejected, or incomplete
-      if (status == 'approved') {
-        // Already approved, show message instead of navigating
-        if (mounted) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   const SnackBar(
-          //     content: Text('Ваш профиль уже одобрен. Изменения недоступны.'),
-          //     backgroundColor: Colors.green,
-          //   ),
-          // );
-        }
-        return;
-      }
+      if (!mounted || status == 'approved') return;
 
-      // Navigate to freelancer form for editing
-      if (mounted) {
-        context.pushReplacementNamed(
-          'freelancer-form',
-          extra: {'isEditMode': true},
-        );
-      }
-    } catch (e) {
-      // If there's an error checking status, allow navigation (safer default)
-      if (mounted) {
-        context.pushReplacementNamed(
-          'freelancer-form',
-          extra: {'isEditMode': true},
-        );
-      }
+      context.pushReplacementNamed(
+        'freelancer-form',
+        extra: {'isEditMode': true},
+      );
+    } catch (_) {
+      if (!mounted) return;
+      context.pushReplacementNamed(
+        'freelancer-form',
+        extra: {'isEditMode': true},
+      );
     }
   }
 

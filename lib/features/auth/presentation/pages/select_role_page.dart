@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/state/auth.dart';
@@ -27,6 +28,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
 
   String? _selectedRole;
   bool _isLoading = false;
+  bool _isHandlingRoleSelection = false;
   String? _errorMessage;
   List<String>? _userRoles;
 
@@ -84,7 +86,6 @@ class _SelectRolePageState extends State<SelectRolePage> {
 
   Future<void> _selectRole(String role) async {
     await _onboardingStore.saveRole(role);
-    await _authStore.setRole(role);
     setState(() {
       _selectedRole = role;
     });
@@ -92,8 +93,9 @@ class _SelectRolePageState extends State<SelectRolePage> {
   }
 
   Future<void> _handleRoleSelection() async {
-    if (_selectedRole == null) return;
+    if (_selectedRole == null || _isHandlingRoleSelection) return;
 
+    _isHandlingRoleSelection = true;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -105,60 +107,48 @@ class _SelectRolePageState extends State<SelectRolePage> {
         // Role already exists, ensure it's saved to auth store and navigate
         await _authStore.setRole(_selectedRole!);
         if (mounted) {
-          if (_selectedRole == 'freelancer') {
-            // Check freelancer profile status via API call (use fresh data for role selection)
-            final status = await _statusManager.getProfileStatusFresh();
-            if (status == 'pending') {
-              context.pushReplacementNamed('success');
-              return;
-            }
-
-            // Use status manager to get appropriate route for freelancer
-            final redirectRoute = await _statusManager.getRedirectRoute();
-            if (redirectRoute != null) {
-              context.pushReplacementNamed(
-                redirectRoute.substring(1),
-              ); // Remove leading /
-            } else {
-              context.pushReplacementNamed(
-                'freelancer-form',
-              ); // Fallback to form if no profile
-            }
-          } else {
-            context.pushReplacementNamed('my-orders');
-          }
+          await _navigateForRole(_selectedRole!);
         }
         return;
       }
 
-      // Call API to bind role to backend
       await _authApi.selectRole(_selectedRole!);
 
       if (mounted) {
-        // Navigate based on selected role
-        if (_selectedRole == 'freelancer') {
-          // For new freelancer, check if profile exists and its status (use fresh data)
-          try {
-            final status = await _statusManager.getProfileStatusFresh();
-            if (status == 'pending') {
-              context.pushReplacementNamed('success');
-              return;
-            }
-          } catch (e) {
-            // Profile doesn't exist yet, proceed with onboarding
-          }
-
-          context.pushReplacementNamed('freelancer-form');
-        } else {
-          // Navigate to client dashboard (My Orders page)
-          context.pushReplacementNamed('my-orders');
-        }
+        await _navigateForRole(_selectedRole!);
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to set role: ${e.toString()}';
         _isLoading = false;
+        _isHandlingRoleSelection = false;
       });
+    }
+  }
+
+  Future<void> _navigateForRole(String role) async {
+    if (role == 'freelancer') {
+      try {
+        final status = await _statusManager.getProfileStatusFresh();
+        if (status == 'pending') {
+          if (mounted) context.go(AppRouter.successRoute);
+          return;
+        }
+      } catch (_) {}
+
+      final redirectRoute = await _statusManager.getRedirectRoute();
+      if (!mounted) return;
+
+      if (redirectRoute != null) {
+        context.pushReplacementNamed(redirectRoute.substring(1));
+      } else {
+        context.pushReplacementNamed('freelancer-form');
+      }
+      return;
+    }
+
+    if (mounted) {
+      context.pushReplacementNamed('my-orders');
     }
   }
 

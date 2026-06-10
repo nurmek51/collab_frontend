@@ -144,9 +144,26 @@ class AppRouter {
         final redirectRoute = await guard.getRequiredRedirect();
         final canAccessOrderFlow = await guard.canAccessOrderFlow();
 
+        // Authenticated freelancers must not stay on pre-auth screens (e.g. /welcome)
+        final isPreAuthRoute =
+            path == welcomeRoute ||
+            path == phoneNumberRoute ||
+            path == otpRoute ||
+            path == selectRoleRoute;
+
+        if (isPreAuthRoute) {
+          if (canAccessOrderFlow) {
+            return myWorkRoute;
+          }
+          return redirectRoute ?? freelancerFormRoute;
+        }
+
         // Preserve URL on web refresh during onboarding / pending review
         if (_freelancerOnboardingRoutes.contains(path)) {
           if (path == successRoute && canAccessOrderFlow) {
+            return myWorkRoute;
+          }
+          if (canAccessOrderFlow && path != successRoute) {
             return myWorkRoute;
           }
           return null;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../shared/state/auth.dart';
 import '../../../../shared/services/freelancer_profile_status_manager.dart';
 import '../../../../shared/di/service_locator.dart';
@@ -50,15 +51,9 @@ class _LandingPageState extends State<LandingPage> {
         break;
 
       case 'freelancer':
-        // Check freelancer profile status
         final redirectRoute = await statusManager.getRedirectRoute();
-        if (mounted && redirectRoute != null) {
-          try {
-            context.go(redirectRoute);
-          } catch (e) {
-            // Fallback navigation
-            context.pushReplacement(redirectRoute);
-          }
+        if (mounted) {
+          context.go(redirectRoute ?? AppRouter.myWorkRoute);
         }
         break;
 

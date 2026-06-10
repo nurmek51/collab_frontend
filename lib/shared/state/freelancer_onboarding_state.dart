@@ -89,6 +89,9 @@ class FreelancerOnboardingState extends Equatable {
   final String? bio;
   final String? avatarUrl;
   final bool hasProfile;
+  final bool hasResume;
+  final String? resumeFilename;
+  final DateTime? resumeUploadedAt;
 
   const FreelancerOnboardingState({
     this.selectedRole,
@@ -105,6 +108,9 @@ class FreelancerOnboardingState extends Equatable {
     this.bio,
     this.avatarUrl,
     this.hasProfile = false,
+    this.hasResume = false,
+    this.resumeFilename,
+    this.resumeUploadedAt,
   });
 
   FreelancerOnboardingState copyWith({
@@ -122,6 +128,11 @@ class FreelancerOnboardingState extends Equatable {
     String? bio,
     String? avatarUrl,
     bool? hasProfile,
+    bool? hasResume,
+    String? resumeFilename,
+    DateTime? resumeUploadedAt,
+    bool clearResumeFilename = false,
+    bool clearResumeUploadedAt = false,
   }) {
     return FreelancerOnboardingState(
       selectedRole: selectedRole ?? this.selectedRole,
@@ -139,6 +150,13 @@ class FreelancerOnboardingState extends Equatable {
       bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       hasProfile: hasProfile ?? this.hasProfile,
+      hasResume: hasResume ?? this.hasResume,
+      resumeFilename: clearResumeFilename
+          ? null
+          : (resumeFilename ?? this.resumeFilename),
+      resumeUploadedAt: clearResumeUploadedAt
+          ? null
+          : (resumeUploadedAt ?? this.resumeUploadedAt),
     );
   }
 
@@ -179,6 +197,9 @@ class FreelancerOnboardingState extends Equatable {
       'bio': bio,
       'avatarUrl': avatarUrl,
       'hasProfile': hasProfile,
+      'hasResume': hasResume,
+      'resumeFilename': resumeFilename,
+      'resumeUploadedAt': resumeUploadedAt?.toIso8601String(),
     };
   }
 
@@ -208,6 +229,11 @@ class FreelancerOnboardingState extends Equatable {
       bio: json['bio'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       hasProfile: json['hasProfile'] as bool? ?? false,
+      hasResume: json['hasResume'] as bool? ?? false,
+      resumeFilename: json['resumeFilename'] as String?,
+      resumeUploadedAt: json['resumeUploadedAt'] != null
+          ? DateTime.tryParse(json['resumeUploadedAt'] as String)
+          : null,
     );
   }
 
@@ -239,6 +265,11 @@ class FreelancerOnboardingState extends Equatable {
       bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       hasProfile: true,
+      hasResume: json['has_resume'] as bool? ?? false,
+      resumeFilename: json['resume_filename'] as String?,
+      resumeUploadedAt: json['resume_uploaded_at'] != null
+          ? DateTime.tryParse(json['resume_uploaded_at'] as String)
+          : null,
     );
   }
 
@@ -262,6 +293,9 @@ class FreelancerOnboardingState extends Equatable {
     bio,
     avatarUrl,
     hasProfile,
+    hasResume,
+    resumeFilename,
+    resumeUploadedAt,
   ];
 }
 

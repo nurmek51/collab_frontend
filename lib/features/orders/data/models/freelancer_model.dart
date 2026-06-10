@@ -17,6 +17,9 @@ class FreelancerModel {
   final Map<String, String>? portfolioLinks;
   final String? avatarUrl;
   final String? bio;
+  final bool hasResume;
+  final String? resumeFilename;
+  final DateTime? resumeUploadedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -38,6 +41,9 @@ class FreelancerModel {
     this.portfolioLinks,
     this.avatarUrl,
     this.bio,
+    this.hasResume = false,
+    this.resumeFilename,
+    this.resumeUploadedAt,
   });
 
   /// Get full name
@@ -119,6 +125,11 @@ class FreelancerModel {
           : null,
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
+      hasResume: json['has_resume'] as bool? ?? false,
+      resumeFilename: json['resume_filename'] as String?,
+      resumeUploadedAt: json['resume_uploaded_at'] != null
+          ? DateTime.tryParse(json['resume_uploaded_at'] as String)
+          : null,
     );
   }
 
@@ -144,6 +155,10 @@ class FreelancerModel {
       if (portfolioLinks != null) 'portfolio_links': portfolioLinks,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (bio != null) 'bio': bio,
+      'has_resume': hasResume,
+      if (resumeFilename != null) 'resume_filename': resumeFilename,
+      if (resumeUploadedAt != null)
+        'resume_uploaded_at': resumeUploadedAt!.toIso8601String(),
     };
   }
 }

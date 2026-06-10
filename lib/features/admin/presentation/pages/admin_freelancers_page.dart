@@ -8,6 +8,8 @@ import '../../../../core/constants/specialization_constants.dart';
 import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/admin_api.dart';
 import '../../../../shared/api/auth_api.dart';
+import '../../../../shared/api/client.dart';
+import '../../../../shared/utils/deep_link_utils.dart';
 import '../../../../features/orders/data/models/freelancer_model.dart';
 
 class AdminFreelancersPage extends StatefulWidget {
@@ -28,6 +30,7 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
 
   // Action state
   final Map<String, bool> _processingActions = {};
+  final Map<String, bool> _viewingResume = {};
 
   @override
   void initState() {
@@ -153,6 +156,38 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ошибка: $error'), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  Future<void> _viewFreelancerResume(String freelancerId) async {
+    if (_viewingResume[freelancerId] == true) return;
+
+    setState(() => _viewingResume[freelancerId] = true);
+    try {
+      final result = await _adminApi.getFreelancerResumeDownloadUrl(
+        freelancerId,
+      );
+      final opened = await DeepLinkUtils.openDeepLink(result.downloadUrl);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Не удалось открыть резюме'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is ApiException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _viewingResume[freelancerId] = false);
+      }
     }
   }
 
@@ -544,6 +579,9 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
           if (freelancer.bio != null && freelancer.bio!.isNotEmpty)
             const SizedBox(height: 24),
 
+          _buildResumeCard(freelancer),
+          const SizedBox(height: 24),
+
           // Social and Portfolio links
           LayoutBuilder(
             builder: (context, constraints) {
@@ -755,6 +793,79 @@ class _AdminFreelancersPageState extends State<AdminFreelancersPage> {
         }).toList(),
       ),
     );
+  }
+
+  Widget _buildResumeCard(FreelancerModel freelancer) {
+    final isViewing = _viewingResume[freelancer.freelancerId] ?? false;
+
+    return _AdminCard(
+      title: 'Резюме',
+      child: freelancer.hasResume
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (freelancer.resumeFilename != null)
+                  _buildInfoRow('Файл', freelancer.resumeFilename!),
+                if (freelancer.resumeUploadedAt != null) ...[
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    'Загружено',
+                    _formatResumeDate(freelancer.resumeUploadedAt!),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: isViewing
+                      ? null
+                      : () => _viewFreelancerResume(freelancer.freelancerId),
+                  icon: isViewing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.description_outlined, size: 20),
+                  label: Text(isViewing ? 'Открытие...' : 'Просмотреть резюме'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.adminAccentBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Ubuntu',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Text(
+              'Резюме не загружено',
+              style: TextStyle(
+                fontFamily: 'Ubuntu',
+                fontWeight: FontWeight.w400,
+                fontSize: 15,
+                color: AppColors.adminSecondaryText,
+              ),
+            ),
+    );
+  }
+
+  String _formatResumeDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
   }
 
   Widget _buildBioCard(FreelancerModel freelancer) {
@@ -1109,6 +1220,28 @@ class _FreelancerSidebarItem extends StatelessWidget {
                         color: AppColors.adminSecondaryText,
                       ),
                     ),
+                    if (freelancer.hasResume) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.adminAccentBlue.withAlpha(31),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Резюме',
+                          style: TextStyle(
+                            fontFamily: 'Ubuntu',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            color: AppColors.adminAccentBlue,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

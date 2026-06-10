@@ -4,14 +4,16 @@ import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/specialization_constants.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/state/freelancer_onboarding_state.dart';
 import '../../../../shared/services/freelancer_onboarding_service.dart';
-import '../../../../shared/services/freelancer_portfolio_storage_service.dart';
+import '../../../../shared/api/client.dart';
 import '../../../../shared/api/freelancer_api.dart';
 import '../../../../shared/di/service_locator.dart';
+import '../../../../shared/utils/resume_file_utils.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/experience_text_field.dart';
 
@@ -31,20 +33,18 @@ class ExperiencePage extends StatefulWidget {
 
 class _ExperiencePageState extends State<ExperiencePage> {
   FreelancerOnboardingService? _onboardingService;
+  FreelancerApi? _freelancerApi;
 
   final _bioController = TextEditingController();
   final _socialController = TextEditingController();
   final _portfolioController = TextEditingController();
-  FreelancerPortfolioStorageService? _portfolioStorageService;
-
-  String? _portfolioFileName;
-  bool _hasPortfolioFile = false;
-  // ignore: unused_field
-  PlatformFile? _selectedPortfolioFile;
 
   FreelancerOnboardingState _currentState = const FreelancerOnboardingState();
   bool _isLoading = true;
   bool _isSubmitting = false;
+  bool _isUploadingResume = false;
+  bool _isDeletingResume = false;
+  double _uploadProgress = 0;
   String? _errorMessage;
 
   @override
@@ -58,48 +58,41 @@ class _ExperiencePageState extends State<ExperiencePage> {
     return _onboardingService!;
   }
 
-  // ignore: unused_element
-  FreelancerPortfolioStorageService get _portfolioStorage {
-    _portfolioStorageService ??= sl<FreelancerPortfolioStorageService>();
-    return _portfolioStorageService!;
+  FreelancerApi get _api {
+    _freelancerApi ??= sl<FreelancerApi>();
+    return _freelancerApi!;
   }
+
+  bool get _hasResume => _currentState.hasResume;
+
+  String? get _resumeFilename => _currentState.resumeFilename;
 
   Future<void> _loadData() async {
     if (widget.isFromMySpecializations) {
-      // When coming from my_specializations, merge existing profile data with new specializations
-      // First get the newly selected specializations from current state
       final stateWithNewSpecs = await _service.getCurrentState();
 
       try {
-        // Load the complete existing profile data from API
-        final freelancerApi = sl<FreelancerApi>();
-        final profile = await freelancerApi.getProfile();
+        final profile = await _api.getProfile();
 
         if (profile.isNotEmpty) {
-          // Create state from existing profile data
           final existingProfileState = FreelancerOnboardingState.fromApi(
             profile,
           );
 
-          // Merge existing profile data with new specializations
           _currentState = existingProfileState.copyWith(
             specializationsWithLevels:
                 stateWithNewSpecs.specializationsWithLevels,
-            hasProfile: true, // Ensure we use PUT request
+            hasProfile: true,
           );
 
-          // Save the merged state
           await _service.updateState(_currentState);
         } else {
-          // Fallback to state with new specs if API fails
           _currentState = stateWithNewSpecs.copyWith(hasProfile: true);
         }
       } catch (_) {
-        // Fallback to state with new specs if API fails
         _currentState = stateWithNewSpecs.copyWith(hasProfile: true);
       }
     } else {
-      // Original flow for other cases
       final result = await _service.loadPageState(
         isFromSuccessPage: widget.isFromSuccessPage,
       );
@@ -133,19 +126,49 @@ class _ExperiencePageState extends State<ExperiencePage> {
     return {'website': trimmed};
   }
 
-  Future<void> _persistInputs({String? portfolioFileUrl}) async {
-    // Load current accumulated state and update with form inputs
-    final currentState = await _service.getCurrentState();
-    final portfolioLinks = _linksFromInput(_portfolioController.text);
+  Future<void> _refreshResumeFromProfile() async {
+    try {
+      final profile = await _api.getProfile();
+      if (profile.isEmpty || !mounted) return;
 
-    if (portfolioFileUrl != null && portfolioFileUrl.isNotEmpty) {
-      portfolioLinks['portfolio_file_url'] = portfolioFileUrl;
+      final resumeState = FreelancerOnboardingState.fromApi(profile);
+      setState(() {
+        _currentState = _currentState.copyWith(
+          hasResume: resumeState.hasResume,
+          resumeFilename: resumeState.resumeFilename,
+          resumeUploadedAt: resumeState.resumeUploadedAt,
+          clearResumeFilename: !resumeState.hasResume,
+          clearResumeUploadedAt: !resumeState.hasResume,
+        );
+      });
+      await _service.updateState(_currentState);
+    } catch (_) {}
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : null,
+      ),
+    );
+  }
+
+  String _apiErrorMessage(Object error) {
+    if (error is ApiException) {
+      if (error.statusCode == 403) return 'Недостаточно прав';
+      return error.message;
     }
+    return error.toString();
+  }
 
+  Future<void> _persistInputs() async {
+    final currentState = await _service.getCurrentState();
     final updatedState = currentState.copyWith(
       bio: _bioController.text.trim(),
       socialLinks: _linksFromInput(_socialController.text),
-      portfolioLinks: portfolioLinks,
+      portfolioLinks: _linksFromInput(_portfolioController.text),
     );
 
     await _service.updateState(updatedState);
@@ -176,39 +199,21 @@ class _ExperiencePageState extends State<ExperiencePage> {
     });
 
     try {
-      /* 
-      // TODO: add firebase file storage
-      String? uploadedPortfolioUrl;
-      if (_selectedPortfolioFile?.bytes != null &&
-          (_selectedPortfolioFile?.name.isNotEmpty ?? false)) {
-        uploadedPortfolioUrl = await _portfolioStorage.uploadPortfolioFile(
-          fileBytes: _selectedPortfolioFile!.bytes!,
-          fileName: _selectedPortfolioFile!.name,
-        );
-      }
-      */
+      await _persistInputs();
 
-      // First persist the current inputs to get complete state
-      await _persistInputs(portfolioFileUrl: null);
-
-      // Load the complete accumulated state with all form data
       final completeState = await _service.getCurrentState();
-
-      // Create the final payload with the updated bio
       final finalState = completeState.copyWith(bio: bio);
 
-      // Submit using the centralized service
       await _service.submitProfile(finalState);
 
       if (mounted) {
         if (widget.isFromMySpecializations) {
-          // Navigate back to my specializations with success result
           context.go(
             '/my-specializations',
             extra: finalState.specializationsWithLevels,
           );
         } else {
-          context.pushReplacementNamed('success');
+          context.go(AppRouter.successRoute);
         }
       }
     } catch (error) {
@@ -227,55 +232,148 @@ class _ExperiencePageState extends State<ExperiencePage> {
   }
 
   Future<void> _pickPortfolioFile() async {
+    if (_isUploadingResume) return;
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif'],
+        allowedExtensions: kAllowedResumeExtensions,
         allowMultiple: false,
         withData: true,
       );
 
-      if (result != null && result.files.single.name.isNotEmpty) {
-        if (result.files.single.bytes == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Не удалось прочитать файл, выберите другой.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
+      if (result == null || result.files.isEmpty) return;
 
-        setState(() {
-          _selectedPortfolioFile = result.files.single;
-          _hasPortfolioFile = true;
-          _portfolioFileName = result.files.single.name;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка выбора файла: $e'),
-            backgroundColor: Colors.red,
-          ),
+      final file = result.files.single;
+      final fileName = file.name;
+      final bytes = file.bytes;
+
+      if (bytes == null) {
+        _showSnackBar(
+          'Не удалось прочитать файл, выберите другой.',
+          isError: true,
         );
+        return;
       }
+
+      final validationError = validateResumeFile(
+        fileName: fileName,
+        fileSize: bytes.length,
+      );
+      if (validationError != null) {
+        _showSnackBar(validationError, isError: true);
+        return;
+      }
+
+      setState(() {
+        _isUploadingResume = true;
+        _uploadProgress = 0;
+      });
+
+      final uploadResult = await _api.uploadResume(
+        fileName: fileName,
+        fileBytes: bytes,
+        onSendProgress: (sent, total) {
+          if (!mounted || total <= 0) return;
+          setState(() => _uploadProgress = sent / total);
+        },
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentState = _currentState.copyWith(
+          hasResume: uploadResult.hasResume,
+          resumeFilename: uploadResult.resumeFilename,
+          resumeUploadedAt: uploadResult.resumeUploadedAt,
+        );
+        _isUploadingResume = false;
+        _uploadProgress = 0;
+      });
+      await _service.updateState(_currentState);
+      await _refreshResumeFromProfile();
+      _showSnackBar('Файл успешно загружен');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isUploadingResume = false;
+        _uploadProgress = 0;
+      });
+      _showSnackBar(_apiErrorMessage(error), isError: true);
     }
   }
 
-  void _removePortfolioFile() {
-    setState(() {
-      _selectedPortfolioFile = null;
-      _hasPortfolioFile = false;
-      _portfolioFileName = null;
-    });
+  Future<void> _removePortfolioFile() async {
+    if (_isDeletingResume || !_hasResume) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить файл?'),
+        content: const Text('Файл будет удалён с сервера.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isDeletingResume = true);
+    try {
+      await _api.deleteResume();
+      if (!mounted) return;
+
+      setState(() {
+        _currentState = _currentState.copyWith(
+          hasResume: false,
+          clearResumeFilename: true,
+          clearResumeUploadedAt: true,
+        );
+        _isDeletingResume = false;
+      });
+      await _service.updateState(_currentState);
+      _showSnackBar('Файл удалён');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isDeletingResume = false);
+      _showSnackBar(_apiErrorMessage(error), isError: true);
+    }
   }
 
   Widget _buildPortfolioSection() {
-    return _hasPortfolioFile
+    if (_isUploadingResume) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LinearProgressIndicator(
+            value: _uploadProgress > 0 ? _uploadProgress : null,
+            color: AppColors.blueAccent,
+            backgroundColor: AppColors.blueAccent.withValues(alpha: 0.2),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Загрузка файла...',
+            style: TextStyle(
+              fontFamily: 'Ubuntu',
+              fontWeight: FontWeight.w400,
+              fontSize: 15.sp,
+              color: AppColors.primaryText,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _hasResume
         ? Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
             decoration: BoxDecoration(
@@ -285,29 +383,35 @@ class _ExperiencePageState extends State<ExperiencePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/svgs/checkbox_icon.svg',
-                      width: 24.w,
-                      height: 24.h,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      _portfolioFileName ?? 'Файл загружен',
-                      style: TextStyle(
-                        fontFamily: 'Ubuntu',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16.sp,
-                        color: const Color(0xFF353F49),
+                Expanded(
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        'assets/svgs/checkbox_icon.svg',
+                        width: 24.w,
+                        height: 24.h,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _resumeFilename ?? 'Файл загружен',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Ubuntu',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16.sp,
+                            color: const Color(0xFF353F49),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 GestureDetector(
-                  onTap: _removePortfolioFile,
+                  onTap: _isDeletingResume ? null : _removePortfolioFile,
                   child: Text(
-                    'удалить',
+                    _isDeletingResume ? 'удаление...' : 'удалить',
                     style: TextStyle(
                       fontFamily: 'Ubuntu',
                       fontWeight: FontWeight.w400,
@@ -407,18 +511,13 @@ class _ExperiencePageState extends State<ExperiencePage> {
 
     final display = _currentState.specializationsWithLevels
         .map((spec) {
-          // Check if this is a custom "Other" specialization
-          // If the specialization name is not in the constants, it's a custom text
           final displayName = SpecializationConstants.getDisplayNameFromKey(
             spec.specialization,
           );
 
-          // If getDisplayNameFromKey returns the same string, it means it's not a key
-          // so it's a custom specialization text
           return displayName == spec.specialization
-              ? spec
-                    .specialization // Custom text, show as-is
-              : displayName; // Standard specialization, show the display name
+              ? spec.specialization
+              : displayName;
         })
         .join(', ');
 
@@ -536,7 +635,9 @@ class _ExperiencePageState extends State<ExperiencePage> {
                         width: double.infinity,
                         height: AppDimensions.buttonHeight,
                         child: ElevatedButton(
-                          onPressed: _isSubmitting ? null : _submitProfile,
+                          onPressed: (_isSubmitting || _isUploadingResume)
+                              ? null
+                              : _submitProfile,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.buttonBackground,
                             foregroundColor: AppColors.buttonText,

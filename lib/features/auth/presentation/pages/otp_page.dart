@@ -17,9 +17,7 @@ import '../widgets/improved_otp_input.dart';
 /// OTP page - third screen in the authentication flow
 class OtpPage extends StatefulWidget {
   final String? phoneNumber;
-  final String? selectedRole;
-
-  const OtpPage({super.key, this.phoneNumber, this.selectedRole});
+  const OtpPage({super.key, this.phoneNumber});
 
   @override
   State<OtpPage> createState() => _OtpPageState();
@@ -31,7 +29,6 @@ class _OtpPageState extends State<OtpPage> {
 
   String _otpCode = '';
   String? _phoneNumber;
-  String? _selectedRole;
   bool _isLoading = false;
   bool _isVerifying = false;
   bool _hasAutoSubmitted = false; // Track if we've already auto-submitted once
@@ -56,31 +53,9 @@ class _OtpPageState extends State<OtpPage> {
     // Load phone number and role from storage or navigation
     _phoneNumber =
         widget.phoneNumber ?? await _onboardingStore.loadPhoneNumber();
-    _selectedRole = widget.selectedRole ?? await _onboardingStore.loadRole();
 
     if (mounted) {
       setState(() {});
-    }
-  }
-
-  Future<void> _applyRoleAfterVerification() async {
-    final selectedRole = _selectedRole;
-    if (selectedRole == null || selectedRole.isEmpty) return;
-
-    try {
-      await _authApi.selectRole(selectedRole);
-      return;
-    } catch (_) {
-      const fallbackRoles = ['freelancer', 'client'];
-      for (final role in fallbackRoles) {
-        try {
-          await _authApi.selectRole(role);
-        } catch (_) {}
-      }
-
-      try {
-        await _authApi.selectRole(selectedRole);
-      } catch (_) {}
     }
   }
 
@@ -416,14 +391,9 @@ class _OtpPageState extends State<OtpPage> {
     });
 
     try {
-      // Call API to verify OTP and get tokens
       await _authApi.verifyOtp(phoneNumber: _phoneNumber!, code: _otpCode);
 
-      // Ensure selected role is applied immediately after successful OTP verification
-      await _applyRoleAfterVerification();
-
       if (mounted) {
-        // Navigate to role selection page
         context.pushReplacementNamed('select-role');
       }
     } catch (e) {
