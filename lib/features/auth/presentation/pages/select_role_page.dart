@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/navigation/app_router.dart';
 import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/state/auth.dart';
 import '../../../../shared/api/auth_api.dart';
+import '../../../../shared/api/client.dart';
 import '../../../../shared/state/freelancer_onboarding_state.dart';
 import '../../../../shared/services/freelancer_profile_status_manager.dart';
 import '../../../../shared/di/service_locator.dart';
@@ -21,6 +21,9 @@ class SelectRolePage extends StatefulWidget {
 }
 
 class _SelectRolePageState extends State<SelectRolePage> {
+  static String? _pendingRoleSelection;
+  static Future<void>? _pendingRoleSelectionRequest;
+
   late final AuthApi _authApi;
   late final FreelancerOnboardingStore _onboardingStore;
   late final FreelancerProfileStatusManager _statusManager;
@@ -52,6 +55,15 @@ class _SelectRolePageState extends State<SelectRolePage> {
       final userData = await _authApi.getCurrentUser();
       _userRoles = List<String>.from(userData['roles'] ?? []);
 
+      final currentRole = await _authStore.getRole();
+      if (currentRole != null && currentRole.isNotEmpty) {
+        _selectedRole = currentRole;
+        if (mounted) {
+          await _navigateForRole(currentRole);
+        }
+        return;
+      }
+
       // Check if user already has a role
       // if (_userRoles!.contains('freelancer') ) {
       //   if (mounted) {
@@ -77,6 +89,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = 'Failed to load user data: ${e.toString()}';
@@ -112,12 +125,21 @@ class _SelectRolePageState extends State<SelectRolePage> {
         return;
       }
 
-      await _authApi.selectRole(_selectedRole!);
+      await _selectRoleOnce(_selectedRole!);
 
       if (mounted) {
         await _navigateForRole(_selectedRole!);
       }
     } catch (e) {
+      if (_isRoleAlreadySelectedError(e)) {
+        await _authStore.setRole(_selectedRole!);
+        if (mounted) {
+          await _navigateForRole(_selectedRole!);
+        }
+        return;
+      }
+
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to set role: ${e.toString()}';
         _isLoading = false;
@@ -126,16 +148,36 @@ class _SelectRolePageState extends State<SelectRolePage> {
     }
   }
 
+  Future<void> _selectRoleOnce(String role) async {
+    final pending = _pendingRoleSelectionRequest;
+    if (_pendingRoleSelection == role && pending != null) {
+      return pending;
+    }
+
+    final request = _authApi.selectRole(role).then<void>((_) {});
+    _pendingRoleSelection = role;
+    _pendingRoleSelectionRequest = request;
+
+    try {
+      await request;
+    } finally {
+      if (_pendingRoleSelectionRequest == request) {
+        _pendingRoleSelection = null;
+        _pendingRoleSelectionRequest = null;
+      }
+    }
+  }
+
+  bool _isRoleAlreadySelectedError(Object error) {
+    if (error is ApiException) {
+      return error.message.toLowerCase().contains('role already exists');
+    }
+
+    return error.toString().toLowerCase().contains('role already exists');
+  }
+
   Future<void> _navigateForRole(String role) async {
     if (role == 'freelancer') {
-      try {
-        final status = await _statusManager.getProfileStatusFresh();
-        if (status == 'pending') {
-          if (mounted) context.go(AppRouter.successRoute);
-          return;
-        }
-      } catch (_) {}
-
       final redirectRoute = await _statusManager.getRedirectRoute();
       if (!mounted) return;
 
