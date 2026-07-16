@@ -21,6 +21,7 @@ class SuccessPage extends StatefulWidget {
 
 class _SuccessPageState extends State<SuccessPage> with WidgetsBindingObserver {
   Timer? _statusPollTimer;
+  bool _isCheckingStatus = false;
 
   @override
   void initState() {
@@ -102,6 +103,8 @@ class _SuccessPageState extends State<SuccessPage> with WidgetsBindingObserver {
                     ],
                   ),
                 ),
+                _buildCheckStatusButton(),
+                SizedBox(height: 20.h),
                 _buildHelpButton(),
                 SizedBox(height: 49.h),
               ],
@@ -169,6 +172,56 @@ class _SuccessPageState extends State<SuccessPage> with WidgetsBindingObserver {
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  Widget _buildCheckStatusButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52.h,
+      child: ElevatedButton(
+        onPressed: _isCheckingStatus ? null : _handleCheckStatus,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF000000),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+        ),
+        child: _isCheckingStatus
+            ? SizedBox(
+                width: 20.w,
+                height: 20.h,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                AppLocalizations.of(context)!.callback_success_button,
+                style: TextStyle(
+                  fontFamily: 'Ubuntu',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 17.sp,
+                  height: 1.3,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _handleCheckStatus() async {
+    setState(() => _isCheckingStatus = true);
+
+    final status = await sl<FreelancerProfileStatusManager>()
+        .getProfileStatusFresh();
+    if (!mounted) return;
+
+    setState(() => _isCheckingStatus = false);
+    if (status != null && status != 'pending') {
+      context.go(AppRouter.myWorkRoute);
+    }
   }
 
   Widget _buildHelpButton() {

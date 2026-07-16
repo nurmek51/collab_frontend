@@ -47,13 +47,21 @@ class AuthApi {
 
     // Save tokens after successful verification
     if (response['access_token'] != null) {
+      final role = (response['current_role'] ?? response['role']) as String?;
+
       await _authStore.setTokens(
         accessToken: response['access_token'] as String,
         refreshToken: response['refresh_token'] as String,
         tokenType: response['token_type'] as String? ?? 'bearer',
         expiresIn: response['expires_in'] as int? ?? 86400,
         refreshExpiresIn: response['refresh_expires_in'] as int?,
+        role: role,
       );
+
+      if (role == null || role.isEmpty) {
+        await _authStore.clearRole();
+      }
+
       _notifyAuthChanged();
     }
 
@@ -89,17 +97,32 @@ class AuthApi {
 
   /// Select role for authenticated user
   Future<Map<String, dynamic>> selectRole(String role) async {
-    final response = await _client.post<Map<String, dynamic>>(
-      '/auth/select-role',
-      data: {'role': role},
-      fromJson: (data) => data as Map<String, dynamic>,
-    );
+    try {
+      final response = await _client.post<Map<String, dynamic>>(
+        '/auth/select-role',
+        data: {'role': role},
+        fromJson: (data) => data as Map<String, dynamic>,
+      );
 
-    // Save role after successful selection
+      await _persistSelectedRole(role);
+      return response;
+    } on ApiException catch (e) {
+      if (_isRoleAlreadyExists(e)) {
+        await _persistSelectedRole(role);
+        return <String, dynamic>{'role': role};
+      }
+
+      rethrow;
+    }
+  }
+
+  Future<void> _persistSelectedRole(String role) async {
     await _authStore.setRole(role);
     _notifyAuthChanged();
+  }
 
-    return response;
+  bool _isRoleAlreadyExists(ApiException error) {
+    return error.message.toLowerCase().contains('role already exists');
   }
 
   /// Get current user information

@@ -51,42 +51,14 @@ class _SelectRolePageState extends State<SelectRolePage> {
     });
 
     try {
-      // Fetch current user info
       final userData = await _authApi.getCurrentUser();
       _userRoles = List<String>.from(userData['roles'] ?? []);
 
-      final currentRole = await _authStore.getRole();
-      if (currentRole != null && currentRole.isNotEmpty) {
-        _selectedRole = currentRole;
-        if (mounted) {
-          await _navigateForRole(currentRole);
-        }
-        return;
-      }
-
-      // Check if user already has a role
-      // if (_userRoles!.contains('freelancer') ) {
-      //   if (mounted) {
-      //     context.pushReplacementNamed('my-work');
-      //   }
-      //   return;
-      // } else if (_userRoles!.contains('client')) {
-      //   if (mounted) {
-      //     context.pushReplacementNamed('my-orders');
-      //   }
-      //   return;
-      // }
-
-      // If no role, load from onboarding store
-      _selectedRole = await _onboardingStore.loadRole();
       if (mounted) {
         setState(() {
+          _selectedRole = null;
           _isLoading = false;
         });
-        // Auto-submit if role is already selected
-        if (_selectedRole != null) {
-          _handleRoleSelection();
-        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -115,9 +87,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
     });
 
     try {
-      // Check if role is already selected
       if (_userRoles != null && _userRoles!.contains(_selectedRole!)) {
-        // Role already exists, ensure it's saved to auth store and navigate
         await _authStore.setRole(_selectedRole!);
         if (mounted) {
           await _navigateForRole(_selectedRole!);
@@ -178,6 +148,7 @@ class _SelectRolePageState extends State<SelectRolePage> {
 
   Future<void> _navigateForRole(String role) async {
     if (role == 'freelancer') {
+      _statusManager.invalidateCache();
       final redirectRoute = await _statusManager.getRedirectRoute();
       if (!mounted) return;
 

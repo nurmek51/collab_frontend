@@ -1,4 +1,5 @@
 import '../api/freelancer_api.dart';
+import '../api/client.dart';
 import '../state/auth.dart';
 
 /// Freelancer profile status management with intelligent caching
@@ -8,6 +9,7 @@ class FreelancerProfileStatusManager {
 
   // Cache for profile data
   Map<String, dynamic>? _cachedProfile;
+  bool _cachedProfileMissing = false;
   DateTime? _lastFetched;
   static const Duration _cacheTimeout = Duration(minutes: 5);
 
@@ -15,7 +17,7 @@ class FreelancerProfileStatusManager {
 
   /// Check if cached data is still valid
   bool get _isCacheValid {
-    return _cachedProfile != null &&
+    return (_cachedProfile != null || _cachedProfileMissing) &&
         _lastFetched != null &&
         DateTime.now().difference(_lastFetched!) < _cacheTimeout;
   }
@@ -25,10 +27,15 @@ class FreelancerProfileStatusManager {
     try {
       final profile = await _freelancerApi.getProfile();
       _cachedProfile = profile;
+      _cachedProfileMissing = false;
       _lastFetched = DateTime.now();
       return profile;
     } catch (e) {
-      // Don't update cache if API call fails
+      if (_isProfileNotFound(e)) {
+        _cachedProfile = null;
+        _cachedProfileMissing = true;
+        _lastFetched = DateTime.now();
+      }
       return null;
     }
   }
@@ -62,7 +69,17 @@ class FreelancerProfileStatusManager {
   /// Invalidate cache (forces next call to fetch from API)
   void invalidateCache() {
     _cachedProfile = null;
+    _cachedProfileMissing = false;
     _lastFetched = null;
+  }
+
+  bool _isProfileNotFound(Object error) {
+    if (error is ApiException) {
+      final message = error.message.toLowerCase();
+      return error.statusCode == 404 || message.contains('profile not found');
+    }
+
+    return error.toString().toLowerCase().contains('profile not found');
   }
 
   /// Check freelancer profile status and return appropriate route
@@ -85,7 +102,7 @@ class FreelancerProfileStatusManager {
       switch (status) {
         case 'approved':
           // Freelancer is approved, can access main feed
-          return '/feed';
+          return '/my-work';
         case 'pending':
           // Profile is pending admin approval
           return '/success';

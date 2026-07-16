@@ -267,6 +267,13 @@ class AuthStore {
     }
   }
 
+  /// Clear only the selected role while keeping the authenticated session.
+  Future<void> clearRole() async {
+    try {
+      await _storage.delete(key: _roleKey);
+    } catch (_) {}
+  }
+
   /// Set user ID after authentication
   Future<void> setUserId(String userId) async {
     try {

@@ -48,11 +48,11 @@ class FreelancerProfileGuard {
         case 'approved':
           return null; // No redirect needed
         default:
-          return null;
+          return '/freelancer-form';
       }
     } catch (e) {
-      // Unknown status — do not force redirect away from current route
-      return null;
+      // Missing or unavailable profile should stay in freelancer onboarding.
+      return '/freelancer-form';
     }
   }
 }
