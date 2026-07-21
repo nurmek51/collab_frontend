@@ -391,7 +391,11 @@ class _OtpPageState extends State<OtpPage> {
     });
 
     try {
-      await _authApi.verifyOtp(phoneNumber: _phoneNumber!, code: _otpCode);
+      await _authApi.verifyOtp(
+        phoneNumber: _phoneNumber!,
+        code: _otpCode,
+        deferRoleSelection: true,
+      );
 
       if (mounted) {
         context.pushReplacementNamed('select-role');

@@ -48,20 +48,63 @@ class _SelectRolePageState extends State<SelectRolePage> {
   Future<void> _loadUserAndRole() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
+
+    // The role was already chosen on WelcomePage, before authentication. Keep
+    // that choice through the OTP flow instead of asking for it a second time.
+    final savedRole = _normalizeRole(await _onboardingStore.loadRole());
 
     try {
       final userData = await _authApi.getCurrentUser();
-      _userRoles = List<String>.from(userData['roles'] ?? []);
+      final normalizedUser = _authApi.extractUserData(userData);
+      final roles = normalizedUser['roles'];
+      _userRoles = roles is Iterable
+          ? roles.map((role) => role.toString().trim().toLowerCase()).toList()
+          : <String>[];
 
-      if (mounted) {
+      final currentRole = _normalizeRole(
+        normalizedUser['current_role'] ?? normalizedUser['role'],
+      );
+
+      if (!mounted) return;
+
+      if (savedRole != null) {
         setState(() {
-          _selectedRole = null;
-          _isLoading = false;
+          _selectedRole = savedRole;
         });
+        await _handleRoleSelection();
+        return;
       }
+
+      // This covers returning users when the OTP response did not include the
+      // current role but /users/me did.
+      if (currentRole != null) {
+        await _authStore.setRole(currentRole);
+        if (mounted) {
+          await _navigateForRole(currentRole);
+        }
+        return;
+      }
+
+      setState(() {
+        _selectedRole = null;
+        _isLoading = false;
+      });
     } catch (e) {
       if (!mounted) return;
+
+      // Role assignment does not depend on /users/me being available. If the
+      // user made a valid choice before OTP, continue with it even when that
+      // optional lookup fails.
+      if (savedRole != null) {
+        setState(() {
+          _selectedRole = savedRole;
+        });
+        await _handleRoleSelection();
+        return;
+      }
+
       setState(() {
         _isLoading = false;
         _errorMessage = 'Failed to load user data: ${e.toString()}';
@@ -69,8 +112,14 @@ class _SelectRolePageState extends State<SelectRolePage> {
     }
   }
 
+  String? _normalizeRole(Object? value) {
+    final role = value?.toString().trim().toLowerCase();
+    return role == 'freelancer' || role == 'client' ? role : null;
+  }
+
   Future<void> _selectRole(String role) async {
     await _onboardingStore.saveRole(role);
+    if (!mounted) return;
     setState(() {
       _selectedRole = role;
     });

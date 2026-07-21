@@ -34,6 +34,7 @@ class AuthApi {
     required String phoneNumber,
     required String code,
     String? firebaseToken,
+    bool deferRoleSelection = false,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       '/auth/verify-otp',
@@ -55,14 +56,19 @@ class AuthApi {
         tokenType: response['token_type'] as String? ?? 'bearer',
         expiresIn: response['expires_in'] as int? ?? 86400,
         refreshExpiresIn: response['refresh_expires_in'] as int?,
-        role: role,
+        role: deferRoleSelection ? null : role,
       );
 
-      if (role == null || role.isEmpty) {
+      if (deferRoleSelection || role == null || role.isEmpty) {
         await _authStore.clearRole();
       }
 
-      _notifyAuthChanged();
+      // During the regular login flow, SelectRolePage first applies the role
+      // chosen on WelcomePage. Refreshing here could route using the backend's
+      // previous current_role before that choice has been applied.
+      if (!deferRoleSelection) {
+        _notifyAuthChanged();
+      }
     }
 
     return response;
