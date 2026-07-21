@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/image_url_utils.dart';
+
 class AvatarFullScreenViewer {
   static Future<void> show(BuildContext context, {required String imageUrl}) {
     return showGeneralDialog<void>(
@@ -57,7 +59,7 @@ class _AvatarFullScreenContent extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: Image.network(
-                    imageUrl,
+                    resolveImageUrl(imageUrl) ?? imageUrl,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;

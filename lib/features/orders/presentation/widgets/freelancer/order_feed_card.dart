@@ -4,6 +4,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/animations/animations.dart';
 import '../../../../../shared/api/companies_api.dart';
 import '../../../../../shared/di/service_locator.dart';
+import '../../../../../shared/utils/image_url_utils.dart';
 import '../../../data/models/order_feed_model.dart';
 import '../../../../../core/constants/specialization_constants.dart';
 
@@ -299,11 +300,12 @@ class _OrderFeedCardState extends State<OrderFeedCard> {
       );
     }
 
-    if (_companyLogo != null && _companyLogo!.isNotEmpty) {
+    final companyLogoUrl = resolveImageUrl(_companyLogo);
+    if (companyLogoUrl != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(8.r),
         child: Image.network(
-          _companyLogo!,
+          companyLogoUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return _buildDefaultLogo();

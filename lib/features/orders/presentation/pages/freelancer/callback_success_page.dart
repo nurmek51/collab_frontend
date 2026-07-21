@@ -28,17 +28,12 @@ class CallbackSuccessPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // OK hand emoji
-                    Text(
-                      '👌🏻',
-                      style: TextStyle(
-                        fontFamily: 'SF Compact',
-                        fontWeight:
-                            FontWeight.w800, // Closest to w790 from Figma
-                        fontSize: 58.sp,
-                        height: 1.193, // lineHeight: 1.193359375em from Figma
-                      ),
-                      textAlign: TextAlign.center,
+                    Image.asset(
+                      'assets/images/ok_hand_success.png',
+                      width: 58.sp,
+                      height: 58.sp,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Успешно',
                     ),
 
                     SizedBox(height: 19.h),

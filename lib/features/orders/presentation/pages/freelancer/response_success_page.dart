@@ -30,16 +30,12 @@ class ResponseSuccessPage extends StatelessWidget {
                 padding: EdgeInsets.fromLTRB(43.w, 24.h, 43.w, 34.h),
                 child: Column(
                   children: [
-                    // Success emoji
-                    Text(
-                      '👌🏻',
-                      style: TextStyle(
-                        fontFamily: 'SF Compact',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 58.sp,
-                        height: 1.193,
-                        color: AppColors.black,
-                      ),
+                    Image.asset(
+                      'assets/images/ok_hand_success.png',
+                      width: 58.sp,
+                      height: 58.sp,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Успешно',
                     ),
 
                     SizedBox(height: 19.h),

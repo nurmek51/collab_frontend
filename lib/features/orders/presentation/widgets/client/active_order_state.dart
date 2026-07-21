@@ -7,6 +7,7 @@ import '../../../../../core/navigation/app_router.dart';
 import '../../../../../shared/api/companies_api.dart';
 import '../../../../../shared/di/service_locator.dart';
 import '../../../../../shared/utils/deep_link_utils.dart';
+import '../../../../../shared/utils/image_url_utils.dart';
 import '../../../domain/entities/order.dart';
 
 /// Widget displaying active order with project details for clients
@@ -64,6 +65,7 @@ class _ActiveOrderStateState extends State<ActiveOrderState> {
   @override
   Widget build(BuildContext context) {
     final displayName = _companyName ?? widget.order.title;
+    final companyLogoUrl = resolveImageUrl(_companyLogo);
 
     return GestureDetector(
       onTap: () {
@@ -108,9 +110,9 @@ class _ActiveOrderStateState extends State<ActiveOrderState> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4.r),
                   ),
-                  child: _companyLogo != null
+                  child: companyLogoUrl != null
                       ? Image.network(
-                          _companyLogo!,
+                          companyLogoUrl,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
                               _buildDefaultLogo(),

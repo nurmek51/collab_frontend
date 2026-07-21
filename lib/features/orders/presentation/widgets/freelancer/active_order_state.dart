@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
+import '../../../../../shared/utils/image_url_utils.dart';
 import '../../../domain/entities/order.dart';
 
 /// Widget displaying active order with project details
@@ -13,6 +14,7 @@ class ActiveOrderState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final projectLogoUrl = resolveImageUrl(order.projectLogo);
     return Container(
       width: 355.w,
       padding: EdgeInsets.fromLTRB(20.w, 22.h, 20.w, 30.h),
@@ -39,18 +41,17 @@ class ActiveOrderState extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4.r),
                 ),
-                child: order.projectLogo != null
-                    ? Image.asset(
-                        'assets/images/project_logo-3e4cfa.png',
-                        fit: BoxFit.contain,
-                      )
-                    : Container(
-                        color: AppColors.lightGrayBackground,
-                        child: const Icon(
-                          Icons.business,
-                          color: AppColors.profileIconColor,
+                child: projectLogoUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(4.r),
+                        child: Image.network(
+                          projectLogoUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildDefaultLogo(),
                         ),
-                      ),
+                      )
+                    : _buildDefaultLogo(),
               ),
             ],
           ),
@@ -164,16 +165,22 @@ class ActiveOrderState extends StatelessWidget {
         borderRadius: BorderRadius.circular(35.r),
       ),
       child: Center(
-        child: Text(
-          '􀉀',
-          style: TextStyle(
-            fontFamily: 'SF Compact Rounded',
-            fontWeight: FontWeight.w400,
-            fontSize: 16.sp,
-            height: 1.3,
-            color: AppColors.white,
-          ),
+        child: Icon(
+          Icons.description_outlined,
+          size: 18.sp,
+          color: AppColors.white,
         ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultLogo() {
+    return Container(
+      color: AppColors.lightGrayBackground,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.business,
+        color: AppColors.profileIconColor,
       ),
     );
   }

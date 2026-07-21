@@ -23,6 +23,7 @@ import '../../../data/models/vacancy_application_models.dart';
 import '../../widgets/colleague_info_modal_new.dart';
 import '../../../../../core/navigation/app_router.dart';
 import '../../../../../shared/widgets/user_avatar.dart';
+import '../../../../../shared/utils/image_url_utils.dart';
 
 import '../../../../../core/constants/specialization_constants.dart';
 
@@ -501,6 +502,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   Widget _buildClientSection() {
+    final companyLogoUrl = resolveImageUrl(companyDetails?.companyLogo);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
@@ -537,9 +539,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8.r),
-                        child: companyDetails?.companyLogo != null
+                        child: companyLogoUrl != null
                             ? Image.network(
-                                companyDetails!.companyLogo!,
+                                companyLogoUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     _buildDefaultClientLogo(),

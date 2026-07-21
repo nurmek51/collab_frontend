@@ -29,8 +29,13 @@ class CallbackAcceptedPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // OK hand emoji
-                    Text('👌', style: TextStyle(fontSize: 72.sp)),
+                    Image.asset(
+                      'assets/images/ok_hand_success.png',
+                      width: 72.sp,
+                      height: 72.sp,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Успешно',
+                    ),
                     SizedBox(height: 24.h),
 
                     // Title

@@ -5,6 +5,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class PeopleAvatarsGrid extends StatelessWidget {
   const PeopleAvatarsGrid({super.key});
 
+  static const _avatarAssets = <String>[
+    'assets/images/andrey_avatar.png',
+    'assets/images/eva_avatar.png',
+    'assets/images/anton_avatar.png',
+    'assets/images/profile_avatar.png',
+    'assets/images/temp.png',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -24,54 +32,32 @@ class PeopleAvatarsGrid extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             // First row
-            _buildAvatarRow(avatarSize, [
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-            ]),
+            _buildAvatarRow(avatarSize, _avatarAssets),
 
             // Second row
-            _buildAvatarRow(avatarSize, [
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-            ]),
+            _buildAvatarRow(avatarSize, _avatarAssets),
 
             // Third row
-            _buildAvatarRow(avatarSize, [
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-            ]),
+            _buildAvatarRow(avatarSize, _avatarAssets),
 
             // Fourth row
-            _buildAvatarRow(avatarSize, [
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-            ]),
+            _buildAvatarRow(avatarSize, _avatarAssets),
           ],
         );
       },
     );
   }
 
-  Widget _buildAvatarRow(double avatarSize, List<String> imageUrls) {
+  Widget _buildAvatarRow(double avatarSize, List<String> imagePaths) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: imageUrls.map((url) => _buildAvatar(avatarSize, url)).toList(),
+      children: imagePaths
+          .map((imagePath) => _buildAvatar(avatarSize, imagePath))
+          .toList(),
     );
   }
 
-  Widget _buildAvatar(double size, String imageUrl) {
+  Widget _buildAvatar(double size, String imagePath) {
     return Container(
       width: size,
       height: size,
@@ -89,8 +75,8 @@ class PeopleAvatarsGrid extends StatelessWidget {
       child: ClipOval(
         child: Container(
           color: const Color(0xFFD9D9D9), // Fallback color
-          child: Image.network(
-            imageUrl,
+          child: Image.asset(
+            imagePath,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(

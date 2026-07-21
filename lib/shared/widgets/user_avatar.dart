@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../di/service_locator.dart';
 import '../services/avatar_url_cache.dart';
 import '../utils/avatar_file_utils.dart';
+import '../utils/image_url_utils.dart';
 import 'avatar_full_screen_viewer.dart';
 
 class UserAvatar extends StatefulWidget {
@@ -84,8 +85,9 @@ class _UserAvatarState extends State<UserAvatar> {
   }
 
   Future<void> _openFullScreen() async {
-    if (!widget.enableFullScreenOnTap || _imageUrl == null) return;
-    await AvatarFullScreenViewer.show(context, imageUrl: _imageUrl!);
+    final imageUrl = resolveImageUrl(_imageUrl);
+    if (!widget.enableFullScreenOnTap || imageUrl == null) return;
+    await AvatarFullScreenViewer.show(context, imageUrl: imageUrl);
   }
 
   @override
@@ -96,6 +98,7 @@ class _UserAvatarState extends State<UserAvatar> {
       fallback: widget.fallbackName,
     );
 
+    final imageUrl = resolveImageUrl(_imageUrl);
     Widget avatarContent;
     if (_isLoading) {
       avatarContent = Center(
@@ -105,9 +108,9 @@ class _UserAvatarState extends State<UserAvatar> {
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
       );
-    } else if (_imageUrl != null) {
+    } else if (imageUrl != null) {
       avatarContent = Image.network(
-        _imageUrl!,
+        imageUrl,
         fit: BoxFit.cover,
         width: widget.size,
         height: widget.size,
@@ -118,7 +121,7 @@ class _UserAvatarState extends State<UserAvatar> {
     }
 
     return GestureDetector(
-      onTap: widget.enableFullScreenOnTap && _imageUrl != null
+      onTap: widget.enableFullScreenOnTap && imageUrl != null
           ? _openFullScreen
           : null,
       child: Container(
