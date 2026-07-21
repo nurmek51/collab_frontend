@@ -36,7 +36,6 @@ class _NewOrderPageState extends State<NewOrderPage> {
 
   bool _isLoading = false;
   bool _isLoadingProfile = true;
-  bool _isNameEditable = false;
   String? _selectedCompanyId;
   late final CreateOrder _createOrderUseCase;
   late final ApiService _apiService;
@@ -217,17 +216,12 @@ class _NewOrderPageState extends State<NewOrderPage> {
                 surname != null &&
                 surname.isNotEmpty) {
               _clientNameField.text = '$name $surname';
-              _isNameEditable = false; // Keep read-only if we have data
-            } else {
-              _isNameEditable = true; // Make editable if no data
             }
 
             _isLoadingProfile = false;
           });
         } else {
-          // No profile data, make field editable
           setState(() {
-            _isNameEditable = true;
             _isLoadingProfile = false;
           });
         }
@@ -235,8 +229,6 @@ class _NewOrderPageState extends State<NewOrderPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          // On error, make field editable so user can still create order
-          _isNameEditable = true;
           _isLoadingProfile = false;
         });
       }
@@ -329,7 +321,6 @@ class _NewOrderPageState extends State<NewOrderPage> {
                                   controller: _clientNameField.textController,
                                   focusNode: _clientNameField.focusNode,
                                   validator: null, // Name is optional now
-                                  readOnly: !_isNameEditable,
                                   enabled: !_isLoading,
                                 ),
                           SizedBox(height: 10.h),

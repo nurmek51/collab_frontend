@@ -47,6 +47,10 @@ class CustomInputField extends StatelessWidget {
           keyboardType: keyboardType,
           maxLines: maxLines,
           readOnly: readOnly,
+          // A read-only field does not establish a text input connection.
+          // Disable selection to prevent Flutter from attempting to show the
+          // system context menu for that inactive connection.
+          enableInteractiveSelection: !readOnly,
           enabled: enabled,
           style: AppTextStyles.textAreaPlaceholder.copyWith(
             color: AppColors.primaryText,
@@ -81,6 +85,9 @@ class CustomInputField extends StatelessWidget {
                   validator: validator,
                   keyboardType: keyboardType,
                   readOnly: readOnly,
+                  // A read-only field does not establish a text input
+                  // connection, so its system selection menu must be disabled.
+                  enableInteractiveSelection: !readOnly,
                   enabled: enabled,
                   style: AppTextStyles.inputLabel.copyWith(
                     color: AppColors.primaryText,
