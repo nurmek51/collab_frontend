@@ -11,6 +11,7 @@ import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/state/freelancer_onboarding_state.dart';
 import '../../../../shared/widgets/freelancer_flow_exports.dart';
 import '../../../auth/presentation/widgets/exit_confirm_modal.dart';
+import '../../../auth/presentation/widgets/delete_account_confirm_modal.dart';
 import '../../../auth/domain/usecases/logout.dart';
 import '../../../../shared/services/freelancer_profile_status_manager.dart';
 import '../widgets/freelancer_resume_section.dart';
@@ -302,22 +303,6 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
                   },
                 ),
                 SizedBox(height: 16.h),
-                _buildMenuItem(
-                  icon: SvgPicture.asset(
-                    'assets/svgs/contact_details.svg',
-                    width: 23.w,
-                    height: 19.h,
-                    colorFilter: ColorFilter.mode(
-                      const Color(0xFF353F49),
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  title: 'Контактные данные',
-                  onTap: () {
-                    // TODO: Navigate to contact details page
-                  },
-                ),
-                SizedBox(height: 16.h),
                 FreelancerResumeSection(
                   hasResume: _profile?.hasResume ?? false,
                   resumeFilename: _profile?.resumeFilename,
@@ -361,6 +346,8 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
                 SizedBox(height: 16.h),
                 */
                 _buildLogoutMenuItem(),
+                SizedBox(height: 16.h),
+                _buildDeleteAccountMenuItem(),
               ],
             ),
           ),
@@ -442,6 +429,25 @@ class _FreelancerProfilePageState extends State<FreelancerProfilePage>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountMenuItem() {
+    return GestureDetector(
+      onTap: () => showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => const DeleteAccountConfirmModal(),
+      ),
+      child: Text(
+        'Удалить аккаунт',
+        style: TextStyle(
+          fontFamily: 'Ubuntu',
+          fontWeight: FontWeight.w600,
+          fontSize: 16.sp,
+          color: const Color(0xFFD54444),
         ),
       ),
     );

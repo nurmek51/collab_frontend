@@ -5,7 +5,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../auth/presentation/widgets/exit_confirm_modal.dart';
 
 /// Profile popup menu widget displayed when tapping on profile icon
-/// Shows "My Profile" and "Log out" options
+/// Shows profile and logout options.
 class ProfilePopupMenu extends StatelessWidget {
   final VoidCallback onDismiss;
   final BuildContext parentContext;

@@ -180,10 +180,16 @@ class ApiClient {
     }
   }
 
-  /// Generic DELETE request with envelope parsing
-  Future<T> delete<T>(String path, {T Function(dynamic)? fromJson}) async {
+  /// Generic DELETE request with envelope parsing.
+  ///
+  /// Some destructive endpoints require an explicit JSON confirmation body.
+  Future<T> delete<T>(
+    String path, {
+    dynamic data,
+    T Function(dynamic)? fromJson,
+  }) async {
     try {
-      final response = await _dio.delete(path);
+      final response = await _dio.delete(path, data: data);
       return _handleResponse<T>(response, fromJson);
     } on DioException catch (e) {
       throw _handleDioError(e);

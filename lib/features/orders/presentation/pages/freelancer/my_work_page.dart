@@ -6,10 +6,12 @@ import '../../../../../shared/widgets/freelancer_flow_exports.dart';
 
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../shared/api/applications_api.dart';
+import '../../../../../shared/api/companies_api.dart';
 import '../../../../../shared/api/orders_api.dart';
 import '../../../../../shared/di/service_locator.dart';
 import '../../../../../features/auth/presentation/widgets/gradient_background.dart';
 import '../../../data/models/application_model.dart';
+import '../../../data/models/company_model.dart';
 import '../../../data/models/order_details_model.dart';
 
 /// "My Work" page showing freelancer's responses and active projects
@@ -23,12 +25,13 @@ class MyWorkPage extends StatefulWidget {
 class _MyWorkPageState extends State<MyWorkPage> with FreelancerPageMixin {
   late final ApplicationsApi _applicationsApi;
   late final OrdersApi _ordersApi;
+  late final CompaniesApi _companiesApi;
   late final ScrollController _scrollController;
   bool isLoading = true;
   String? error;
   List<ApplicationModel> applications = [];
   List<ApplicationModel> activeProjects = [];
-  Map<String, String> orderTitles = {}; // orderId -> orderTitle
+  Map<String, String> orderTitles = {}; // orderId -> companyName
   bool showResponsesEmptyState = false;
 
   @override
@@ -36,6 +39,7 @@ class _MyWorkPageState extends State<MyWorkPage> with FreelancerPageMixin {
     super.initState();
     _applicationsApi = sl<ApplicationsApi>();
     _ordersApi = sl<OrdersApi>();
+    _companiesApi = sl<CompaniesApi>();
     _scrollController = ScrollController();
     _loadMyWorkData();
   }
@@ -72,14 +76,38 @@ class _MyWorkPageState extends State<MyWorkPage> with FreelancerPageMixin {
           .where((app) => app.status != ApplicationStatus.accepted)
           .toList();
 
-      // Fetch order titles for each unique orderId
+      // Fetch company name for each unique orderId (via order -> company)
       final orderIds = allApplications.map((app) => app.orderId).toSet();
       final Map<String, String> titles = {};
+      final Map<String, String?> companyNameCache = {}; // companyId -> name
       for (final orderId in orderIds) {
         try {
           final orderData = await _ordersApi.getOrderById(orderId);
           final orderDetails = OrderDetailsModel.fromJson(orderData);
-          titles[orderId] = orderDetails.orderTitle;
+          final companyId = orderDetails.companyId;
+
+          String? companyName;
+          if (companyId.isNotEmpty) {
+            if (companyNameCache.containsKey(companyId)) {
+              companyName = companyNameCache[companyId];
+            } else {
+              try {
+                final companyResponse = await _companiesApi.getCompanyById(
+                  companyId,
+                );
+                if (companyResponse != null) {
+                  companyName = CompanyModel.fromJson(
+                    companyResponse,
+                  ).companyName;
+                }
+              } catch (e) {
+                debugPrint('Failed to load company $companyId: $e');
+              }
+              companyNameCache[companyId] = companyName;
+            }
+          }
+
+          titles[orderId] = companyName ?? orderDetails.orderTitle;
         } catch (e) {
           debugPrint('Failed to load order details for $orderId: $e');
         }

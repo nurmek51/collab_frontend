@@ -240,6 +240,17 @@ class AuthApi {
     );
   }
 
+  /// Permanently delete the current user's account and clear its local session.
+  Future<void> deleteAccount() async {
+    await _client.delete<Map<String, dynamic>>(
+      '/users/me',
+      data: {'confirm': true},
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+
+    await logout();
+  }
+
   /// Logout (clear local tokens)
   Future<void> logout() async {
     _adminSession?.clear();

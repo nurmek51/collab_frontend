@@ -12,6 +12,7 @@ import '../../../../shared/di/service_locator.dart';
 import '../../../../shared/api/companies_api.dart';
 import '../../../../shared/api/auth_api.dart';
 import '../../../../shared/widgets/editable_profile_avatar.dart';
+import '../../../auth/presentation/widgets/delete_account_confirm_modal.dart';
 import 'package:flutter/services.dart';
 
 /// Client Profile page for editing user profile information
@@ -291,21 +292,56 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                       children: [
                         SizedBox(height: 30.h),
 
-                        // Header: back arrow above the title (column layout as per Figma)
+                        // Header actions above the title.
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GestureDetector(
-                              onTap: () => context.pop(),
-                              child: SvgPicture.asset(
-                                'assets/svgs/back_arrow.svg',
-                                width: 26.w,
-                                height: 26.w,
-                                colorFilter: ColorFilter.mode(
-                                  AppColors.primaryText,
-                                  BlendMode.srcIn,
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () => context.pop(),
+                                  child: SvgPicture.asset(
+                                    'assets/svgs/back_arrow.svg',
+                                    width: 26.w,
+                                    height: 26.w,
+                                    colorFilter: ColorFilter.mode(
+                                      AppColors.primaryText,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                SizedBox(width: 18.w),
+                                GestureDetector(
+                                  onTap: () => showDialog<void>(
+                                    context: context,
+                                    builder: (_) =>
+                                        const DeleteAccountConfirmModal(),
+                                  ),
+                                  child: SizedBox(
+                                    width: 28.w,
+                                    height: 28.w,
+                                    child: Stack(
+                                      children: [
+                                        Icon(
+                                          Icons.person_outline_rounded,
+                                          color: const Color(0xFFD54444),
+                                          size: 25.w,
+                                        ),
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 1.h,
+                                          child: Icon(
+                                            Icons.close_rounded,
+                                            color: const Color(0xFFD54444),
+                                            size: 12.w,
+                                            semanticLabel: 'Удалить аккаунт',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             SizedBox(height: 18.h),
                             Text(
